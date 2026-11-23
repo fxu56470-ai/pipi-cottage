@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2a1f2a">
+<link rel="icon" href="assets/icon-192.png" type="image/png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="屁屁小屋">
+<title>屁屁小屋</title>
+<link rel="preload" as="image" href="assets/farm-art.webp">
+<link rel="preload" as="image" href="assets/character-sprites-small.webp">
+<link rel="stylesheet" href="css/world.css">
+</head>
+<body data-phase="0">
+
+<div class="game">
+  <header class="hud">
+    <div class="hud-group">
+      <button class="chip day" id="dayChip" title="看看今天的进度">
+        <span id="dayLabel">第 1 天</span><span class="sub" id="phaseLabel">早晨</span><span class="wx" id="weatherMark" hidden>☀</span>
+      </button>
+      <div class="chip" title="金币">
+        <img src="assets/ui-coin.png" alt=""><b id="coinValue">0</b>
+      </div>
+      <div class="chip energy" id="energyChip" title="体力">
+        <img src="assets/ui-drop.png" alt=""><b id="energyValue">0</b>
+        <span class="bar"><i id="energyBar"></i></span>
+      </div>
+    </div>
+    <div class="hud-group">
+      <button class="chip" id="bagButton" title="背包"><img src="assets/tool-basket.png" alt=""><span class="label-long">背包</span></button>
+      <button class="chip" id="dexButton" title="图鉴"><img src="assets/ui-star.png" alt=""><span class="label-long">图鉴</span></button>
+      <button class="chip" id="questButton" title="任务"><img src="assets/ui-scroll.png" alt=""><span class="label-long">任务</span></button>
+      <button class="chip" id="soundButton" title="音乐">♪</button>
+      <button class="chip" id="menuButton" title="更多"><span aria-hidden="true">⋯</span></button>
+    </div>
+  </header>
+
+  <section class="stage" id="stage">
+    <div class="art" id="art">
+
+      <!-- ---------------------------------------------------------- 小屋 -->
+      <section class="scene" data-scene="cottage">
+        <img class="scene-bg" src="assets/room-birthday-26-optimized.webp" alt="温暖的小屋卧室：史努比和米菲的抱枕、照片墙、四份礼物和生日蛋糕" draggable="false">
+        <button class="spot" data-action="gallery" style="left:566px;top:120px;width:430px;height:220px" aria-label="看看照片墙"><span class="spot-label">我们的照片</span></button>
+        <button class="spot" data-action="gifts" style="left:104px;top:722px;width:430px;height:250px" aria-label="拆礼物"><span class="spot-label">拆礼物</span></button>
+        <button class="spot" data-action="cake" style="left:648px;top:452px;width:300px;height:250px" aria-label="看看生日蛋糕"><span class="spot-label">生日蛋糕</span></button>
+        <button class="spot" data-action="bed" style="left:86px;top:300px;width:440px;height:460px" aria-label="睡觉"><span class="spot-label">睡觉</span></button>
+        <button class="spot" data-action="shelf" style="left:1050px;top:150px;width:190px;height:400px" aria-label="看看书架"><span class="spot-label">书架</span></button>
+        <div class="candle-flame" id="flameLeft" style="left:770px;top:542px" hidden aria-hidden="true"></div>
+        <div class="candle-flame" id="flameRight" style="left:800px;top:545px" hidden aria-hidden="true"></div>
+        <button class="exit" data-exit="farm" style="left:700px;top:916px">出门去农场 →</button>
+        <button class="exit" data-exit="tvroom" style="left:1010px;top:952px">客厅 →</button>
+      </section>
+
+      <!-- ---------------------------------------------------------- 农场 -->
+      <section class="scene" data-scene="farm">
+        <img class="scene-bg" src="assets/farm-art.webp" alt="清晨的农场：左边是一间小木屋，中间围着栅栏的一块空地，四周开满向日葵" draggable="false">
+        <svg class="field-lines" id="fieldLines" viewBox="0 0 1536 1024" aria-hidden="true"></svg>
+        <div class="plots" id="plots"></div>
+        <button class="spot" data-action="shop" style="left:118px;top:392px;width:150px;height:150px" aria-label="种子箱"><span class="spot-label">种子箱</span></button>
+        <button class="exit" data-exit="cottage" style="left:250px;top:470px">← 回小屋</button>
+        <button class="exit" data-exit="lake" style="left:1256px;top:620px">去湖边 →</button>
+      </section>
+
+      <!-- ---------------------------------------------------------- 湖边 -->
+      <section class="scene" data-scene="lake">
+        <img class="scene-bg" src="assets/lake-art.webp" alt="傍晚的湖边：一棵垂柳、木栈道、两张椅子，水面平静" draggable="false">
+        <i class="fx water-shine" aria-hidden="true"></i>
+        <button class="spot" data-action="fish" style="left:300px;top:470px;width:520px;height:400px" aria-label="在水里钓鱼"><span class="spot-label">钓鱼</span></button>
+        <button class="spot spot-rest" data-action="rest" style="left:872px;top:462px;width:222px;height:186px" aria-label="坐在椅子上发呆"><span class="spot-label">发会儿呆</span></button>
+        <button class="exit" data-exit="farm" style="left:300px;top:452px">← 回农场</button>
+      </section>
+
+      <!-- ---------------------------------------------------------- 客厅 -->
+      <section class="scene" data-scene="tvroom">
+        <img class="scene-bg" src="assets/tvroom-art.webp" alt="夜里的小客厅：米色沙发、旧电视、落地灯，窗外是星星" draggable="false">
+        <i class="fx tv-glow" aria-hidden="true"></i>
+        <button class="spot" data-action="tv" style="left:250px;top:262px;width:660px;height:310px" aria-label="一起看电视"><span class="spot-label">一起看电视</span></button>
+        <button class="spot" data-action="look" data-text="电视柜最下面那格塞着一叠旧录像带，标签是他写的，字迹很难认。" style="left:452px;top:596px;width:344px;height:104px" aria-label="看看电视柜"><span class="spot-label">看看</span></button>
+        <button class="exit" data-exit="cottage" style="left:80px;top:862px">← 回小屋</button>
+        <button class="exit" data-exit="bath" style="left:1216px;top:668px">去澡堂 →</button>
+      </section>
+
+      <!-- ---------------------------------------------------------- 澡堂 -->
+      <section class="scene" data-scene="bath">
+        <img class="scene-bg" src="assets/bath-art.webp" alt="木屋澡堂：一只圆木桶冒着热气，木盆、小凳、灯笼" draggable="false">
+        <div class="fx steam" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <button class="spot" data-action="bath" style="left:196px;top:458px;width:492px;height:346px" aria-label="一起泡澡"><span class="spot-label">一起泡澡</span></button>
+        <button class="spot" data-action="look" data-text="木盆里的水还温着，木瓢浮在上面，慢慢转。" style="left:52px;top:610px;width:176px;height:190px" aria-label="看看木盆"><span class="spot-label">看看</span></button>
+        <button class="exit" data-exit="tvroom" style="left:80px;top:880px">← 回客厅</button>
+        <button class="exit" data-exit="roof" style="left:1216px;top:700px">上楼顶 →</button>
+      </section>
+
+      <!-- ---------------------------------------------------------- 楼顶 -->
+      <section class="scene" data-scene="roof">
+        <img class="scene-bg" src="assets/roof-art.webp" alt="小楼顶的木台：串灯、坐垫、毯子，远处是湖和银河" draggable="false">
+        <i class="fx lamp-glow" aria-hidden="true"></i>
+        <i class="fx roof-stars" aria-hidden="true"></i>
+        <button class="spot" data-action="stars" style="left:200px;top:664px;width:220px;height:140px" aria-label="坐下看星星"><span class="spot-label">坐下看星星</span></button>
+        <button class="spot" data-action="look" data-text="灯笼里的蜡烛只剩一点点，风一大就该灭了。" style="left:548px;top:660px;width:100px;height:160px" aria-label="看看灯笼"><span class="spot-label">看看</span></button>
+        <button class="exit" data-exit="bath" style="left:80px;top:900px">← 下楼</button>
+      </section>
+
+    </div>
+
+    <div class="night-glow" aria-hidden="true"></div>
+    <div class="tint" id="tint" data-phase="0" aria-hidden="true"></div>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="ambient" id="ambient" aria-hidden="true"></div>
+
+    <div class="stage-hint" id="stageHint" role="status"></div>
+
+    <nav class="dpad" aria-label="移动">
+      <button class="up" data-move="up" aria-label="向上">↑</button>
+      <button class="left" data-move="left" aria-label="向左">←</button>
+      <button class="down" data-move="down" aria-label="向下">↓</button>
+      <button class="right" data-move="right" aria-label="向右">→</button>
+    </nav>
+
+    <section class="dialog" id="dialog" role="dialog" aria-live="polite">
+      <span class="who" id="dialogWho">他</span>
+      <p class="text" id="dialogText"></p>
+      <div class="choices" id="dialogChoices" hidden></div>
+      <div class="foot">
+        <span class="tip" id="dialogTip">点这里 / 空格 继续</span>
+        <button class="next" id="dialogNext">继续 →</button>
+      </div>
+    </section>
+
+    <div class="rotate-note">
+      <b>横过来看会更完整 ↻</b>
+      <button type="button" id="rotateDismiss">知道了</button>
+    </div>
+  </section>
+
+  <footer class="taskbar">
+    <span class="tag" id="taskTag">今天</span>
+    <p id="taskText">先从小屋里出去，看看外面</p>
+    <span class="hint" id="taskHint">点地面走动 · 点亮起来的地方</span>
+  </footer>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<div class="wish-overlay" id="wishOverlay" hidden>
+  <div class="wish-card">
+    <img src="assets/wish-cake.png" alt="插着蜡烛的生日蛋糕">
+    <p class="kicker" id="wishKicker">26 岁啦</p>
+    <h2 id="wishTitle">愿望也一起许好了</h2>
+    <p id="wishNote">蜡烛替你把愿望带走了。接下来的日子，慢慢等它实现。</p>
+    <button class="btn" id="wishButton">看看他写了什么</button>
+  </div>
+</div>
+
+<div class="fade" id="fade"></div>
+
+<script src="js/core.js"></script>
+<script src="js/weather.js"></script>
+<script src="js/ambient.js"></script>
+<script src="js/achv.js"></script>
+<script src="js/events.js"></script>
+<script src="js/daily.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/world.js"></script>
+<script src="js/farm.js"></script>
+<script src="js/fishing.js"></script>
+<script src="js/rest.js"></script>
+<script src="js/npc.js"></script>
+<script src="js/story.js"></script>
+<script src="js/dinner.js"></script>
+<script src="js/moments.js"></script>
+<script src="js/boot.js"></script>
+<script src="js/pwa.js"></script>
+</body>
+</html>
