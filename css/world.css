@@ -343,8 +343,6 @@ button { font: inherit; color: inherit; }
 .actor[data-pose="sit"] { --pose-h: .74; --pose-w: 1.1; --pose-lift: -7%; }
 /* 坐在沙发/坐垫上：比普通坐更矮一点，腿是盘起来的 */
 .actor[data-pose="seat"], .npc[data-pose="seat"] { --pose-h: .6; --pose-w: 1.16; --pose-lift: -2%; }
-/* 坐在沙发/坐垫上：比普通坐更矮一点，腿是盘起来的 */
-.actor[data-pose="seat"], .npc[data-pose="seat"] { --pose-h: .6; --pose-w: 1.16; --pose-lift: -2%; }
 .actor[data-pose="sleep"] { --pose-h: .46; --pose-w: 1.7; --pose-lift: -16%; }
 .actor[data-pose="fish"] { --pose-h: .97; --pose-w: 1.03; --pose-lift: 1%; }
 .actor[data-pose="dig"] { --pose-h: .84; --pose-w: 1.08; --pose-lift: 2%; }
