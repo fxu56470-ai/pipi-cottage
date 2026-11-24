@@ -6,7 +6,7 @@
   const P = window.P;
   const U = P.util;
 
-  const state = { active: false, saved: null, fg: [], timers: [] };
+  const state = { active: false, saved: null, fg: [], timers: [], staySeat: false };
 
   function sceneNode(key) {
     return document.querySelector(`.scene[data-scene="${key || P.world.current}"]`);
@@ -35,6 +35,7 @@
     if (P.npc) {
       P.npc.quiet = true;
       P.npc.faceMode = null;
+      if (P.npc.unseat) P.npc.unseat();
       if (P.npc.el) {
         delete P.npc.el.dataset.moving;
         if (P.npc.bubble) P.npc.bubble.hidden = true;
@@ -62,24 +63,38 @@
       if (P.npc.el) {
         delete P.npc.el.dataset.pose;
         delete P.npc.el.dataset.lean;
+        delete P.npc.el.dataset.hold;
+        delete P.npc.el.dataset.towel;
         P.npc.el.style.transition = '';
         if (P.npc.shadow) P.npc.shadow.style.transition = '';
       }
       P.npc.setMood && P.npc.setMood(P.world.current);
     }
     P.world.setPose('');
+    P.world.hold && P.world.hold('');
+    const av = document.getElementById('avatar');
+    if (av) {
+      delete av.dataset.lean;
+      delete av.dataset.hold;
+      delete av.dataset.towel;
+    }
     if (state.saved) {
       P.world.pos = { ...state.saved.pos };
       P.world.dir = state.saved.dir || 'down';
       P.world.focus = { ...P.world.pos };
       state.saved = null;
     }
-    // 演完了让他回到这个场景里该待的地方（沙发 / 木桶 / 楼顶栏杆）
+    // 演完了让他回到这个场景里该待的地方（沙发 / 木桶 / 楼顶栏杆）。
+    // 有些演出里他刚坐下、刚擦完头发，这时候不该把他塞回桶里去，用 duo.stay() 关掉。
     const sceneKey = P.world.current;
-    if (P.moments && P.moments.onEnter) {
+    const stay = state.staySeat;
+    state.staySeat = false;
+    if (!stay && P.moments && P.moments.onEnter) {
       setTimeout(() => { if (P.world.current === sceneKey) P.moments.onEnter(sceneKey); }, 60);
     }
   };
+
+  duo.stay = function stay() { state.staySeat = true; };
 
   /* --------------------------------------------------------------- 摆位 --- */
   // 你自己：站到某一点、换个姿势、朝哪边
@@ -93,6 +108,29 @@
   duo.npc = function npc(spot, pose, face) {
     const him = P.npc;
     if (!him || !him.el) return;
+    // 有些场景他本来不在这儿（白天还在农场，你却跑去湖边）：
+    // 那就先把他叫进当前场景，淡入一下，别让演出对着空气说话
+    const sceneKey = P.world.current;
+    const parent = him.el.parentElement;
+    const inScene = parent && parent.dataset.scene === sceneKey;
+    if (!inScene && him.summon && him.summon(sceneKey, spot)) {
+      him.el.style.transition = 'opacity .45s ease';
+      him.el.style.opacity = '0';
+      him.shadow.style.transition = 'opacity .45s ease';
+      him.shadow.style.opacity = '0';
+      after(40, () => {
+        if (!him.el) return;
+        him.el.style.opacity = '1';
+        him.shadow.style.opacity = '1';
+      });
+      after(560, () => {
+        if (!him.el) return;
+        him.el.style.opacity = '';
+        him.shadow.style.opacity = '';
+        him.el.style.transition = '';
+        him.shadow.style.transition = '';
+      });
+    }
     if (spot) {
       const m = 'left .62s cubic-bezier(.32,.8,.35,1), top .62s cubic-bezier(.32,.8,.35,1)';
       him.el.style.transition = m;
@@ -120,6 +158,23 @@
     if (!node) return;
     if (dir) node.dataset.lean = dir;
     else delete node.dataset.lean;
+  };
+
+  /* 手上的东西：鱼竿、毛巾。不给 kind 就是放下 */
+  duo.hold = function hold(who, kind) {
+    const node = who === 'npc' ? (P.npc && P.npc.el) : document.getElementById('avatar');
+    if (!node) return;
+    if (kind) node.dataset.hold = kind;
+    else delete node.dataset.hold;
+    if (kind !== 'towel') delete node.dataset.towel;
+  };
+
+  /* 毛巾的三种状态：拿在手上 / 举起来擦 / 整条盖头上 */
+  duo.towel = function towel(who, state) {
+    const node = who === 'npc' ? (P.npc && P.npc.el) : document.getElementById('avatar');
+    if (!node) return;
+    if (state) node.dataset.towel = state;
+    else delete node.dataset.towel;
   };
 
   /* 自己走过去：不是瞬移，是一小段带弧线的挪动（踩上沙发、跨进木桶、爬上床） */
@@ -204,6 +259,95 @@
     node.style.top = `${p.y - (who === 'npc' ? 200 : 190)}px`;
     scene.appendChild(node);
     after(ms || 2400, () => node.remove());
+  };
+
+  /* --------------------------------------------------- 演出用的零碎道具 --- */
+  // 演出里临时造出来的东西（鱼线、浮标、蹦出水面的鱼、水珠），
+  // 都登记在这里，duo.end() 时一次性清干净，不会留在场景里。
+  duo.keep = function keep(node) {
+    if (node) state.fg.push(node);
+    return node;
+  };
+
+  // 湿头发上往下掉的水珠
+  duo.drip = function drip(spot, n) {
+    const scene = sceneNode();
+    if (!scene || !spot) return;
+    for (let i = 0; i < (n || 4); i += 1) {
+      const node = document.createElement('i');
+      node.className = 'duo-drip';
+      node.style.cssText = `left:${spot.x + U.rand(-30, 30)}px;top:${spot.y + U.rand(-6, 10)}px;`
+        + `animation-delay:${i * 0.22}s`;
+      scene.appendChild(node);
+      duo.keep(node);
+      after(1600 + i * 220, () => node.remove());
+    }
+  };
+
+  // 一根斜着垂进水里的鱼线
+  duo.line = function line(from, to) {
+    const scene = sceneNode();
+    if (!scene || !from || !to) return null;
+    const node = document.createElement('div');
+    node.className = 'fishline';
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    node.style.left = `${from.x}px`;
+    node.style.top = `${from.y}px`;
+    node.style.width = `${Math.hypot(dx, dy)}px`;
+    node.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
+    scene.appendChild(node);
+    return duo.keep(node);
+  };
+
+  // 浮标 + 一圈涟漪
+  duo.bobber = function bobber(spot) {
+    const scene = sceneNode();
+    if (!scene || !spot) return null;
+    const node = document.createElement('div');
+    node.className = 'bobber';
+    node.style.left = `${spot.x}px`;
+    node.style.top = `${spot.y}px`;
+    scene.appendChild(node);
+    const ring = document.createElement('div');
+    ring.className = 'ripple';
+    ring.style.left = `${spot.x}px`;
+    ring.style.top = `${spot.y}px`;
+    scene.appendChild(ring);
+    duo.keep(node);
+    duo.keep(ring);
+    return node;
+  };
+
+  // 水面上蹦一个「！」
+  duo.mark = function mark(spot, text) {
+    const scene = sceneNode();
+    if (!scene || !spot) return null;
+    const node = document.createElement('div');
+    node.className = 'bite';
+    node.textContent = text || '!';
+    node.style.left = `${spot.x}px`;
+    node.style.top = `${spot.y}px`;
+    scene.appendChild(node);
+    duo.keep(node);
+    after(1100, () => node.remove());
+    return node;
+  };
+
+  // 有东西蹦出水面
+  duo.leap = function leap(spot, icon) {
+    const scene = sceneNode();
+    if (!scene || !spot) return null;
+    const img = document.createElement('img');
+    img.className = 'duo-fish';
+    img.src = P.icon(icon || 'fish-minnow');
+    img.alt = '';
+    img.style.left = `${spot.x}px`;
+    img.style.top = `${spot.y}px`;
+    scene.appendChild(img);
+    duo.keep(img);
+    after(1300, () => img.remove());
+    return img;
   };
 
   /* ------------------------------------------------------------ 前景裁片 --- */

@@ -180,6 +180,13 @@
       await sheetWithArt('assets/moment-bath.webp', '一起泡澡', 'SOAK', lines, '泡够了');
       D.end();
       if (gain.energy) P.showHint(`+${gain.energy} 体力，身上轻了`, 2200);
+      // 泡完了他还在小凳上滴水 —— 提一句，免得没人发现还能递毛巾
+      if (S().flags.towelHintDay !== S().day) {
+        S().flags.towelHintDay = S().day;
+        setTimeout(() => {
+          if (P.world.current === 'bath') P.ui.toast('他在小凳上坐着擦头发 · 点「递毛巾」', 'ui-heart');
+        }, 1400);
+      }
       P.ui.task();
     });
   };
@@ -374,12 +381,188 @@
     });
   };
 
+  /* ------------------------------------------------------- 一起钓鱼 --- */
+  // 湖边栈桥：两个人并排坐着，两根竿子伸到水面上。
+  // 他的浮标先沉，然后你的也沉了——两个人都钓上来了。
+  A.fishTogether = function fishTogether() {
+    if (P.ui.modalOpen() || P.world.busy) return;
+    approach({ x: 900, y: 792 }, async () => {
+      const D = duo();
+      if (!D.begin('fish')) return;
+      const s = S();
+      const night = s.phase >= 2;
+
+      // 一、他已经坐在栈桥边上了，竿子斜斜地伸出去
+      D.npc({ x: 1010, y: 780 }, 'seat', 'left');
+      D.hold('npc', 'rod');
+      await D.glide({ x: 872, y: 762 }, 780);
+      D.player(null, 'seat', 'left');
+      D.hold('player', 'rod');
+      D.cine({ x: 940, y: 720 }, 1.34);
+      await D.wait(420);
+
+      // 二、两根线甩进水里
+      const his = { x: 752, y: 816 };
+      const hers = { x: 664, y: 800 };
+      D.line({ x: 919, y: 714 }, his);
+      D.line({ x: 732, y: 697 }, hers);
+      const hisBob = D.bobber(his);
+      const herBob = D.bobber(hers);
+      P.audio && P.audio.sfx('cast');
+      await D.wait(900);
+      D.say('npc', night ? '……夜里它们靠边。别出声。' : '……别说话，看浮标。');
+      await D.wait(1900);
+
+      // 三、他的浮标沉了
+      P.audio && P.audio.sfx('bite');
+      P.vibrate && P.vibrate(18);
+      if (hisBob) { hisBob.style.transition = 'top .16s ease-out'; hisBob.style.top = `${his.y + 14}px`; }
+      D.mark(his, '!');
+      D.lean('npc', 'left');
+      await D.wait(280);
+      D.leap(his, night ? 'fish-catfish' : 'fish-carp');
+      P.audio && P.audio.sfx('plop');
+      await D.wait(420);
+      D.say('npc', '……有了。');
+      if (hisBob) hisBob.style.top = `${his.y}px`;
+      await D.wait(1500);
+
+      // 四、你这边也沉了，而且更沉
+      P.audio && P.audio.sfx('bite');
+      if (herBob) { herBob.style.transition = 'top .16s ease-out'; herBob.style.top = `${hers.y + 16}px`; }
+      D.mark(hers, '!');
+      D.lean('player', 'right');
+      await D.wait(300);
+      D.leap(hers, night ? 'fish-koi' : 'fish-trout');
+      P.audio && P.audio.sfx('plop');
+      await D.wait(500);
+      D.say('player', '我这条更大。');
+      await D.wait(1400);
+      D.say('npc', '……嗯。是。');
+      if (herBob) herBob.style.top = `${hers.y}px`;
+
+      // 五、竿子都收回来，两个人往对方那边靠
+      D.hold('player', '');
+      D.hold('npc', '');
+      D.lean('npc', 'left-soft');
+      D.lean('player', 'right-soft');
+      D.bits({ x: 942, y: 722 }, 'heart', 2);
+      await D.wait(1300);
+
+      const first = once('fishDay');
+      const gain = reward('fishDay', 2, 2);
+      P.daily && P.daily.bump('fish');
+      record('fish');
+      const warm = (S().hearts || 0) >= 6;
+      const lines = first
+        ? [
+          '栈桥的木板被晒了一天，坐上去还是温的。',
+          '他把竿子往你那边挪了挪，让出一块平整的地方给你放脚。',
+          '两根浮标并排立在水面上，风一吹，一起晃。',
+          '他的先沉了，接着你的也沉了。两个人都没顾上说话，只顾着收线。'
+        ]
+        : [
+          '又是并排坐着的半个下午，谁也没先站起来。',
+          '他的浮标晃了一下，你的也跟着晃——像是商量好的。'
+        ];
+      if (night) lines.push('天黑之后水面变成一块镜子，把星星全收了进去。');
+      if (warm) lines.push('收线的时候，他的手在你手背上停了一下，才拿开。');
+      await P.ui.say(lines, { mode: 'rest', endLabel: '再坐一会儿' });
+      D.end();
+      if (gain.hearts) { P.showHint(`+${gain.hearts} 好感`, 1800); if (P.npc) P.npc.floatHearts(); }
+      if (gain.energy) P.showHint(`+${gain.energy} 体力`, 1600);
+      P.ui.task();
+    });
+  };
+
+  /* ------------------------------------------------------- 递条毛巾 --- */
+  // 泡完澡他站在桶边滴水，你把毛巾递过去，他擦完再塞回你手里。
+  // 毛巾只以「拿在手上」的形式出现——像素小人太小，盖在头上会糊成一块白，
+  // 湿发、擦干这些靠水珠 + 泡泡台词 + 蒸汽来说。
+  A.towel = function towel() {
+    if (P.ui.modalOpen() || P.world.busy) return;
+    approach({ x: 760, y: 880 }, async () => {
+      const D = duo();
+      if (!D.begin('towel')) return;
+
+      // 一、他站在桶边，头发还滴着水
+      D.npc({ x: 720, y: 872 }, '', 'left');
+      D.hold('npc', '');
+      D.cine({ x: 790, y: 806 }, 1.3);
+      await D.wait(500);
+      D.drip({ x: 724, y: 726 }, 3);
+      D.say('npc', '……我没事，你先擦。');
+      await D.wait(1400);
+
+      // 二、你拿着毛巾过去，递到他手上
+      D.hold('player', 'towel');
+      await D.glide({ x: 866, y: 890 }, 760);
+      D.player(null, '', 'left');
+      D.cine({ x: 800, y: 812 }, 1.34);
+      await D.wait(600);
+      D.say('player', '把水擦干。');
+      D.lean('player', 'left-soft');
+      await D.wait(900);
+      D.hold('player', '');
+      D.hold('npc', 'towel');
+      D.lean('player', '');
+      P.audio && P.audio.sfx('water');
+      await D.wait(500);
+
+      // 三、水珠甩得到处都是
+      D.drip({ x: 712, y: 722 }, 3);
+      D.drip({ x: 748, y: 728 }, 2);
+      D.steam({ x: 780, y: 760 }, 3);
+      D.say('npc', '……嗯。');
+      await D.wait(1500);
+      D.bits({ x: 800, y: 730 }, 'spark', 2);
+      await D.wait(900);
+
+      // 四、擦完又把毛巾塞回你手里
+      D.hold('npc', '');
+      D.hold('player', 'towel');
+      D.say('npc', '……该你了。');
+      P.audio && P.audio.sfx('heart');
+      await D.wait(700);
+      D.lean('player', 'right-soft');
+      D.bits({ x: 806, y: 730 }, 'heart', 3);
+      await D.wait(1200);
+
+      const first = once('towelDay');
+      const gain = reward('towelDay', 2, 3);
+      record('towel');
+      const warm = (S().hearts || 0) >= 6;
+      const lines = first
+        ? [
+          '水汽还没散。他站在桶边，头发上的水一滴一滴落在木地板上。',
+          '你把毛巾递过去，他愣了一下才接，擦得很慢，像在拖时间。',
+          '擦完他把毛巾叠回原来的样子，塞回你手里。',
+          '“……该你了。”说完就低头，不看你。'
+        ]
+        : [
+          '还是那条毛巾，还是那句「把水擦干」。',
+          '这次他擦得快多了，然后把毛巾叠好递回来，等你接手。'
+        ];
+      if (warm) lines.push('递毛巾的时候，他的手指在你手背上多停了一下。');
+      await P.ui.say(lines, { mode: 'rest', endLabel: '擦头发' });
+      // 他刚擦完头发，别演完又把他塞回木桶里
+      D.stay();
+      D.end();
+      if (gain.hearts) { P.showHint(`+${gain.hearts} 好感`, 1800); if (P.npc) P.npc.floatHearts(); }
+      if (gain.energy) { P.showHint(`+${gain.energy} 体力`, 1600); }
+      P.ui.task();
+    });
+  };
+
   /* ------------------------------------------------------- 他的位置 --- */
   // 客厅、澡堂、楼顶是他自己也会待着的地方：一到那儿，他就在自己的位置上
   const SEATS = {
     tvroom: { spot: { x: 668, y: 574 }, pose: 'seat', face: 'right' },
     bath: { spot: { x: 620, y: 692 }, pose: '', face: 'up' },
-    roof: { spot: { x: 244, y: 812 }, pose: 'seat', face: 'up' }
+    roof: { spot: { x: 244, y: 812 }, pose: 'seat', face: 'up' },
+    // 湖边的栈桥：他自己下午本来就会来钓鱼，所以只在他「该在湖边」的时段坐过去，
+    // 不然早上他从农场瞬移到湖边就说不通了
+    lake: { spot: { x: 1010, y: 780 }, pose: 'seat', face: 'left', scheduled: true }
   };
   // 夜里的小屋：他坐在床沿等你，床那个热点也会改成「一起睡」
   const BEDSIDE = { spot: { x: 470, y: 664 }, pose: '', face: 'left' };
@@ -404,13 +587,10 @@
     }
     const seat = SEATS[scene] || (scene === 'cottage' && late && close ? BEDSIDE : null);
     if (!seat) return;
+    // scheduled 的场景要跟着他的日程走
+    if (seat.scheduled && P.npc.sceneFor && P.npc.sceneFor(P.state.phase || 0) !== scene) return;
     if (!P.npc.summon(scene, seat.spot)) return;
-    setTimeout(() => {
-      const el = P.npc && P.npc.el;
-      if (!el || P.npc.forced !== scene) return;
-      P.npc.faceMode = seat.face;
-      el.dataset.pose = seat.pose;
-      el.dataset.hold = '';
-    }, 420);
+    // 用 npc.seat 记住这个姿态：干活的计时器和踱步都不会把它冲掉
+    P.npc.seat(seat.pose, seat.face, seat.hold || '');
   }
 })();

@@ -124,7 +124,10 @@
 
   ui.say = function say(lines, opts = {}) {
     return new Promise((resolve) => {
-      const list = Array.isArray(lines) ? lines.slice() : [{ text: String(lines) }];
+      // 允许直接写一个字符串数组：那种一律当旁白，省得每句都套 {who, text}
+      const list = (Array.isArray(lines) ? lines.slice() : [lines])
+        .map((line) => (typeof line === 'string' ? { who: '旁白', text: line } : line))
+        .filter((line) => line && line.text);
       const wrap = dialogEls();
       if (!wrap.box || !list.length) { resolve(); return; }
       ui.dialogEl = wrap.box;
@@ -541,7 +544,9 @@
     { key: 'stars', name: '楼顶看星星', art: 'assets/roof-art.webp', pos: '12% 62%', where: '楼顶 · 点垫子', line: '他数到二十一，你数到十七，谁也没数完。' },
     { key: 'dinner', name: '一起吃晚饭', art: 'assets/room-birthday-26-optimized.webp', pos: '48% 62%', where: '屋里有鱼有菜时 · 点饭桌', line: '两副碗筷，他把你爱吃的往你那边推。' },
     { key: 'kiss', name: '一个吻', art: 'assets/moment-kiss.webp', where: '夜里回小屋 · 点床', line: '他耳朵尖红起来，过了好一会儿才说：再来一下。' },
-    { key: 'sleep', name: '一起睡', art: 'assets/moment-sleep.webp', where: '回小屋点床 · 选「和他一起睡」', line: '留了一半被子给他，他躺下的时候肩膀是松的。' }
+    { key: 'sleep', name: '一起睡', art: 'assets/moment-sleep.webp', where: '回小屋点床 · 选「和他一起睡」', line: '留了一半被子给他，他躺下的时候肩膀是松的。' },
+    { key: 'fish', name: '一起钓鱼', art: 'assets/lake-art.webp', pos: '60% 56%', where: '湖边 · 点栈桥', line: '两根浮标并排立在水上，风一吹一起晃。' },
+    { key: 'towel', name: '递条毛巾', art: 'assets/bath-art.webp', pos: '46% 42%', where: '泡完澡 · 站到桶边点「递毛巾」', line: '把毛巾递过去，他擦得很慢，像在拖时间。' }
   ];
 
   ui.memories = function memories() {

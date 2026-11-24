@@ -275,7 +275,7 @@
     if (!el.stage) return;
     buildSceneActions(el.stage.clientHeight > el.stage.clientWidth * 1.1);
   };
-  const ACTION_PRIORITY = ['shop', 'bed', 'tv', 'bath', 'stars', 'fish', 'rest', 'cake', 'gifts', 'shelf', 'gallery'];
+  const ACTION_PRIORITY = ['shop', 'towel', 'bed', 'tv', 'bath', 'stars', 'fishTogether', 'fish', 'rest', 'cake', 'gifts', 'shelf', 'gallery'];
   let actionsBar = null;
   function buildSceneActions(portrait) {
     if (!actionsBar) {
@@ -386,7 +386,7 @@
       el.avatar.id = 'avatar';
       el.avatar.setAttribute('role', 'img');
       el.avatar.setAttribute('aria-label', '屁屁');
-      el.avatar.innerHTML = '<i class="prop prop-rod"></i><i class="prop prop-hoe"></i><i class="prop prop-can"></i><i class="prop prop-basket"></i>';
+      el.avatar.innerHTML = '<i class="prop prop-rod"></i><i class="prop prop-hoe"></i><i class="prop prop-can"></i><i class="prop prop-basket"></i><i class="prop prop-towel"></i>';
     }
     if (!el.shadow) {
       el.shadow = document.createElement('div');

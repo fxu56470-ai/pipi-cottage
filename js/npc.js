@@ -23,7 +23,7 @@
     npc.el.className = 'npc';
     npc.el.setAttribute('role', 'img');
     npc.el.setAttribute('aria-label', '闷葫芦');
-    npc.el.innerHTML = '<i class="prop prop-rod"></i><i class="prop prop-hoe"></i><span class="npc-bubble" hidden></span>';
+    npc.el.innerHTML = '<i class="prop prop-rod"></i><i class="prop prop-hoe"></i><i class="prop prop-towel"></i><span class="npc-bubble" hidden></span>';
     npc.bubble = npc.el.querySelector('.npc-bubble');
     npc.el.style.pointerEvents = 'auto';
     npc.el.style.cursor = 'pointer';
@@ -67,6 +67,8 @@
     const target = npc.forced === sceneKey ? sceneKey : npc.sceneFor();
     const sceneNode = document.querySelector(`.scene[data-scene="${sceneKey}"]`);
     if (!sceneNode) return;
+    // 换场景就把他「坐下」的固定姿态清掉，由 moments.onEnter 重新决定
+    npc.seatMode = null;
     if (target !== sceneKey) {
       npc.el.remove();
       npc.shadow.remove();
@@ -100,7 +102,26 @@
     } else if (sceneKey === 'farm') {
       npc.el.dataset.hold = 'hoe';
     }
+    // 坐在沙发上、木桶里、栈桥上：这个姿态优先级最高，
+    // 不然干活的计时器一响，他就从垫子上站起来举竿子了
+    applySeat();
   };
+
+  function applySeat() {
+    if (!npc.seatMode || !npc.el) return;
+    if (npc.seatMode.pose) npc.el.dataset.pose = npc.seatMode.pose;
+    else delete npc.el.dataset.pose;
+    if (npc.seatMode.hold) npc.el.dataset.hold = npc.seatMode.hold;
+    if (npc.seatMode.face) npc.faceMode = npc.seatMode.face;
+  }
+
+  /* 让他固定在某个位置的姿态上（坐沙发 / 泡桶里 / 栈桥边） */
+  npc.seat = function seat(pose, face, hold) {
+    npc.seatMode = { pose: pose || '', face: face || null, hold: hold || '' };
+    applySeat();
+  };
+
+  npc.unseat = function unseat() { npc.seatMode = null; };
 
   /* 干活：农场里隔一会儿刨一下，别让他像个雕像 */
   let idleTimer = 0;
@@ -126,6 +147,7 @@
 
   npc.stroll = function stroll() {
     if (!npc.el || !npc.here || npc.quiet || strolling) return;
+    if (npc.seatMode) return;                           // 坐着就别到处走了
     if (npc.el.dataset.pose === 'fish') return;         // 钓着鱼就别乱走了
     if (P.ui && P.ui.modalOpen()) return;
     if (P.world && P.world.busy) return;
@@ -193,6 +215,7 @@
 
   npc.act = function act() {
     if (!npc.el || !npc.here || npc.quiet) return;
+    if (npc.seatMode) return;                       // 已经坐好了，别站起来干活
     if (P.ui && P.ui.modalOpen()) return;
     const scene = P.world.current;
     if (npc.sceneFor() !== scene) return;
