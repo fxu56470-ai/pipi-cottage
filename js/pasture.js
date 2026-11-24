@@ -38,7 +38,8 @@
   function place() {
     const host = ensureHost();
     if (!host || !P.state) return;
-    for (let i = 0; i < P.PASTURE_SLOTS; i += 1) {
+    const cap = P.pastureCap();
+    for (let i = 0; i < cap; i += 1) {
       let node = pasture.nodes[i];
       if (!node) {
         node = makeNode(i);
@@ -95,7 +96,9 @@
   };
 
   pasture.firstEmpty = function firstEmpty() {
-    return P.state.animals.findIndex((a) => !a);
+    const cap = P.pastureCap();
+    for (let i = 0; i < cap; i += 1) if (!P.state.animals[i]) return i;
+    return -1;
   };
 
   pasture.add = function add(kind) {
@@ -342,16 +345,22 @@
   /* ------------------------------------------------------------- 入口 --- */
   A.pasture = function () {
     const body = document.createElement('div');
+    const cap = P.pastureCap();
     const list = P.state.animals.filter(Boolean);
     const ready = pasture.readyCount();
-    body.innerHTML = `<p>围栏里有 <b>${list.length}</b> 只。${ready ? `有 ${ready} 份等着收。` : '今天没什么要收的。'}</p>
+    const fence = P.hasUp('fence');
+    body.innerHTML = `<p>围栏里有 <b>${list.length}</b> 只，站得下 <b>${cap}</b> 只。
+      ${ready ? `有 ${ready} 份等着收。` : '今天没什么要收的。'}</p>
       <p style="font-size:13px;color:#9a7a6d">早上喂一次，第二天才有产出。羊毛两天剪一次。
-      饲料在镇上买，也可以拿小麦顶。</p>`;
+      饲料在镇上买，也可以拿小麦顶。</p>
+      <p style="font-size:13px;color:#8a6a5d">${fence
+        ? '围栏往外接了一段，靠东边那片空草地也能站两只。'
+        : `往东那片草地还围不进来。镇上杂货铺有<b>围栏木料</b>（${P.UPGRADE.fence.price} 币），接一段能多站两只。`}</p>`;
     P.ui.sheet({
-      title: '牧场', kicker: 'PASTURE', body,
+      title: '牧场', kicker: `PASTURE ${list.length}/${cap}`, body,
       foot: [
         { label: '去水槽喂一遍', run: () => { P.ui.closeSheet(); setTimeout(() => pasture.trough(), 80); } },
-        { label: '看看围栏', pale: true, run: () => P.ui.closeSheet() }
+        { label: '只是看看', pale: true, run: () => P.ui.closeSheet() }
       ]
     });
   };

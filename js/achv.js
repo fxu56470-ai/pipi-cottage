@@ -253,6 +253,27 @@
       note: '把那个蛋糕点上蜡烛',
       test: () => S().flags.ending === true,
       progress: () => [S().flags.ending ? 1 : 0, 1]
+    },
+    {
+      id: 'glasshouse',
+      name: '温室亮起来了',
+      note: '把菜园边那间温室的玻璃装上',
+      test: () => Boolean(S().ups && S().ups.glass),
+      progress: () => [S().ups && S().ups.glass ? 1 : 0, 1]
+    },
+    {
+      id: 'wideFence',
+      name: '围栏够宽了',
+      note: '把牧场接出一段，站得下八只',
+      test: () => Boolean(S().ups && S().ups.fence),
+      progress: () => [S().ups && S().ups.fence ? 1 : 0, 1]
+    },
+    {
+      id: 'junkHunt',
+      name: '会淘的人',
+      note: '在旧货摊上买过 3 样东西',
+      test: () => (S().stats.junk || 0) >= 3,
+      progress: () => [Math.min(S().stats.junk || 0, 3), 3]
     }
   ];
 

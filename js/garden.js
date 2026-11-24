@@ -8,10 +8,10 @@
   // 菜园土垄的四个角（美术像素），跟背景里那块翻好的土对齐
   // 对着背景里那块深棕土垄的四个角如实量的，差 10px 网格就会压到草地上
   const FIELD = {
-    T: { x: 712, y: 422 },
-    R: { x: 972, y: 548 },
-    B: { x: 700, y: 676 },
-    L: { x: 434, y: 562 }
+    T: { x: 775, y: 452 },
+    R: { x: 1075, y: 562 },
+    B: { x: 710, y: 778 },
+    L: { x: 418, y: 596 }
   };
   const COLS = 5;
   const ROWS = 4;
@@ -126,6 +126,8 @@
 
   function paint() {
     if (!P.state) return;
+    const scene = document.querySelector('.scene[data-scene="garden"]');
+    if (scene) scene.classList.toggle('glass-lit', P.hasUp('glass'));
     garden.nodes.forEach((node) => {
       const open = garden.isOpen(node.index);
       const plot = P.state.garden[node.index] || { seed: null, days: 0, watered: false };
@@ -138,7 +140,7 @@
       node.zone.classList.toggle('ripe', ripe);
       // 等距格子的包围盒有 150px 宽，但相邻格只错开 70px，
       // 作物比这个宽就会压到隔壁那格上，所以按格间距定尺寸
-      const scale = 1.5 + node.row * 0.15;
+      const scale = 2.0 + node.row * 0.2;
       if (crop) {
         const src = `assets/crop-${plot.seed}-${stageOf(plot)}.png`;
         if (!node.crop.getAttribute('src') || !node.crop.src.endsWith(src)) node.crop.src = src;
@@ -394,6 +396,7 @@
     const next = P.GARDEN_TIERS[l + 1];
     const rows = garden.rowsOpen();
     const planted = P.state.garden.slice(0, garden.capacity()).filter((plot) => plot.seed).length;
+    const glass = P.hasUp('glass');
     const body = document.createElement('div');
     const rowsHtml = P.GARDEN_TIERS.map((tier, i) => {
       const done = i <= l;
@@ -406,9 +409,10 @@
     }).join('');
     body.innerHTML = `<p>屋后这块地比前院宽，土也松。现在开着 <b>${rows} 排 · ${rows * COLS} 格</b>，
         种着 ${planted} 格。${garden.hasSprinkler() ? '洒水器每天早上自己转一圈。' : ''}</p>
-      <div class="achv-list">${rowsHtml}</div>
+      <div class="achv-list">${rowsHtml}${glassRow(glass)}</div>
       <p style="font-size:13px;color:#9a7a6d">菜园的土是整过的，不用翻，站过去就能种。
-      收的时候一样会留一颗种子。${garden.hasScarecrow() ? '<br>稻草人立在北边，鸟不太敢下来。' : ''}</p>`;
+      收的时候一样会留一颗种子。${garden.hasScarecrow() ? '<br>稻草人立在北边，鸟不太敢下来。' : ''}
+      ${glass ? '<br>温室里有一点暖光，晚上也不全黑——作物一晚当两晚用。' : ''}</p>`;
     P.ui.sheet({
       title: '菜园',
       kicker: next ? `还能再开 ${next.rows - rows} 排` : '全开了',
@@ -440,6 +444,15 @@
     });
   };
 
+  function glassRow(glass) {
+    return `<div class="achv ${glass ? 'done' : ''}">
+      <span class="mark">${glass ? '★' : '·'}</span>
+      <div><strong>温室</strong>
+      <em>${glass ? '玻璃装好了，里面一直比外面暖' : '门锁着，玻璃碎了一地。镇上杂货铺有卖'}</em></div>
+      <span class="num">${glass ? '有' : '1100 币'}</span>
+    </div>`;
+  }
+
   // 新开的那几排，土翻起来的动静。prev 是开垦前的排数
   function growIn(prev) {
     const host = document.querySelector('.scene[data-scene="garden"]');
@@ -464,10 +477,12 @@
   /* ------------------------------------------------------------ 过夜 --- */
   garden.night = function night() {
     let grew = 0;
+    // 温室修好以后地温高，一晚上能当天用
+    const speed = P.hasUp('glass') ? 2 : 1;
     P.state.garden.forEach((plot, i) => {
       if (!garden.isOpen(i)) { plot.watered = false; return; }
       if (garden.hasSprinkler() && plot.seed && !plot.watered) plot.watered = true;
-      if (plot.seed && plot.watered) { plot.days += 1; grew += 1; }
+      if (plot.seed && plot.watered) { plot.days += speed; grew += 1; }
       plot.watered = false;
     });
     return grew;

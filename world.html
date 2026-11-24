@@ -74,9 +74,10 @@
         <img class="scene-bg" src="assets/garden-art.webp" alt="屋后的菜园：中间是一大片翻好的土垄，右边一间玻璃温室，左边有稻草人和堆肥箱" draggable="false">
         <svg class="field-lines" id="gardenLines" viewBox="0 0 1536 1024" aria-hidden="true"></svg>
         <div class="plots" id="gardenPlots"></div>
-        <button class="spot" data-action="garden" style="left:662px;top:186px;width:224px;height:210px" aria-label="温室里的账本"><span class="spot-label">温室 · 菜园账本</span></button>
-        <button class="spot" data-action="look" data-text="稻草人的袖子被风吹得一直拍，鸟真的不来。它身上那件衣服是他旧衬衫改的。" style="left:412px;top:154px;width:82px;height:154px" aria-label="看看稻草人"><span class="spot-label">看看</span></button>
-        <button class="spot" data-action="look" data-text="堆肥箱里是去年的落叶和菜叶，翻一翻，底下是松软的黑土。" style="left:86px;top:224px;width:250px;height:158px" aria-label="看看堆肥箱"><span class="spot-label">看看</span></button>
+        <div class="glass-glow" aria-hidden="true"></div>
+        <button class="spot" data-action="garden" style="left:900px;top:250px;width:270px;height:255px" aria-label="温室 · 菜园账本"><span class="spot-label">温室 · 菜园账本</span></button>
+        <button class="spot" data-action="look" data-text="稻草人的袖子被风吹得一直拍，鸟真的不来。它身上那件衣服是他旧衬衫改的。" style="left:595px;top:235px;width:120px;height:140px" aria-label="看看稻草人"><span class="spot-label">看看</span></button>
+        <button class="spot" data-action="look" data-text="堆肥箱里是去年的落叶和菜叶，翻一翻，底下是松软的黑土。旁边两只浇水壶，一大一小，小的那只是给你用的。" style="left:110px;top:290px;width:360px;height:215px" aria-label="看看堆肥箱和水壶"><span class="spot-label">看看</span></button>
         <button class="exit" data-exit="farm" style="left:296px;top:856px">← 回农场</button>
       </section>
 
@@ -84,7 +85,7 @@
       <section class="scene" data-scene="pasture">
         <img class="scene-bg" src="assets/pasture-art.webp" alt="傍晚的牧场：木栅栏围起一片草地，左边是谷仓和干草堆，中间有一个水槽" draggable="false">
         <div class="pasture-animals" id="pastureAnimals" aria-hidden="true"></div>
-        <button class="spot" data-action="trough" style="left:628px;top:382px;width:124px;height:104px" aria-label="水槽"><span class="spot-label">喂一遍</span></button>
+        <button class="spot" data-action="trough" style="left:915px;top:425px;width:105px;height:80px" aria-label="水槽"><span class="spot-label">喂一遍</span></button>
         <button class="spot" data-action="pasture" style="left:906px;top:760px;width:176px;height:92px" aria-label="牧场里的动物"><span class="spot-label">牧场</span></button>
         <button class="spot" data-action="look" data-text="干草堆被压出一个窝，大概是谁中午在这儿睡过。" style="left:58px;top:364px;width:168px;height:120px" aria-label="看看干草堆"><span class="spot-label">看看</span></button>
         <button class="exit" data-exit="farm" style="left:266px;top:836px">← 回农场</button>
@@ -93,10 +94,16 @@
       <!-- ---------------------------------------------------------- 镇上 -->
       <section class="scene" data-scene="town">
         <img class="scene-bg" src="assets/town-art.webp" alt="镇上的小广场：石板地、水井、红白条纹的市集棚子、面包房和露天咖啡座" draggable="false">
-        <button class="spot" data-action="market" style="left:560px;top:246px;width:424px;height:406px" aria-label="市集大棚"><span class="spot-label">市集大棚</span></button>
-        <button class="spot" data-action="bakery" style="left:120px;top:276px;width:290px;height:250px" aria-label="面包房"><span class="spot-label">面包房</span></button>
-        <button class="spot" data-action="cafe" style="left:256px;top:498px;width:190px;height:140px" aria-label="咖啡座"><span class="spot-label">坐下喝一杯</span></button>
-        <button class="spot" data-action="well" style="left:472px;top:372px;width:148px;height:330px" aria-label="水井"><span class="spot-label">水井</span></button>
+        <button class="spot" data-action="market" style="left:700px;top:180px;width:645px;height:480px" aria-label="市集大棚"><span class="spot-label">市集大棚</span></button>
+        <button class="spot" data-action="bakery" style="left:150px;top:270px;width:320px;height:340px" aria-label="面包房"><span class="spot-label">面包房</span></button>
+        <button class="spot" data-action="store" style="left:450px;top:300px;width:215px;height:205px" aria-label="杂货铺"><span class="spot-label">杂货铺</span></button>
+        <button class="spot" data-action="cafe" style="left:330px;top:505px;width:300px;height:155px" aria-label="咖啡座"><span class="spot-label">坐下喝一杯</span></button>
+        <button class="spot" data-action="well" style="left:615px;top:455px;width:225px;height:245px" aria-label="水井"><span class="spot-label">水井</span></button>
+        <button class="spot spot-junk" data-action="junk" style="left:826px;top:686px;width:220px;height:180px" aria-label="旧货摊">
+          <img class="junk-cloth" src="assets/prop-junk-cloth.png" alt="">
+          <span class="junk-goods"></span>
+          <span class="spot-label">旧货摊</span>
+        </button>
         <button class="exit spot-truck" data-action="driveHome" style="left:374px;top:800px">开车回家 →</button>
       </section>
 

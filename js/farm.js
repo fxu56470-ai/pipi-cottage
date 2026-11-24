@@ -532,7 +532,7 @@
     }
     // 菜园和牧场：昨天有没有动静，一句话说清
     if (extra && extra.gardenGrew) {
-      lines.push(`屋后菜园里 ${extra.gardenGrew} 格长了一天。`);
+      lines.push(`屋后菜园里 ${extra.gardenGrew} 格长了${P.hasUp('glass') ? '两' : '一'}天。`);
     }
     if (extra && extra.herd) {
       const bits2 = [];

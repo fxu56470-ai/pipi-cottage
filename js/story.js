@@ -344,6 +344,31 @@
 
   story.giftLines = function giftLines(item) {
     const hearts = S().hearts;
+    // 旧货摊淘来的三样东西，他会认真看一会儿
+    if (item.trinket === 'key') {
+      return [
+        { who: '闷葫芦', text: '钥匙？' },
+        { who: '旁白', text: '他翻过来看了一圈，指甲刮了刮齿。' },
+        { who: '闷葫芦', text: '这种齿是老锁。我家那个抽屉也是这种，一直打不开。' },
+        { who: '闷葫芦', text: '……先留着吧。说不定哪天就对上了。' }
+      ];
+    }
+    if (item.trinket === 'marble') {
+      return [
+        { who: '闷葫芦', text: '弹珠。' },
+        { who: '旁白', text: '他举起来对着光看，里面的红线晃了一下。' },
+        { who: '闷葫芦', text: '小时候我有过一颗，输给别人了。' },
+        { who: '闷葫芦', text: hearts >= 6 ? '这颗你别输啊。' : '这颗我收着。' }
+      ];
+    }
+    if (item.trinket === 'postcard') {
+      return [
+        { who: '闷葫芦', text: '字都化开了。' },
+        { who: '旁白', text: '他念了两遍那两个字，没念出声。' },
+        { who: '闷葫芦', text: '……「等我」。' },
+        { who: '闷葫芦', text: '写这个的人，最后回来了吗。' }
+      ];
+    }
     if (item.fish === 'frog') {
       return [
         { who: '闷葫芦', text: '……这是青蛙。' },

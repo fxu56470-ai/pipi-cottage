@@ -2643,3 +2643,61 @@ button { font: inherit; color: inherit; }
   .drive-text { font-size: 16px; top: 14%; }
   .drive-truck { width: 132px; }
 }
+
+/* 旧货摊：井边铺一块格子布，布上摆今天的三样东西 ------------------------ */
+.spot.spot-junk { z-index: 24; }
+.junk-cloth {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 232px;
+  transform: translateX(-50%);
+  image-rendering: pixelated;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 12px #2a1a1a55);
+}
+.junk-goods {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.junk-goods img {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  image-rendering: pixelated;
+  left: calc(28% + var(--i, 0) * 22%);
+  top: 58%;
+  transform: translate(-50%, -70%) rotate(-5deg);
+  filter: drop-shadow(0 3px 5px #2a1a1a66);
+  animation: junk-bob 4.2s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * .4s);
+}
+@keyframes junk-bob {
+  50% { transform: translate(-50%, -70%) rotate(3deg); }
+}
+
+/* 温室亮起来：玻璃上有一层暖光，修好玻璃才会亮 --------------------------- */
+.glass-glow {
+  position: absolute;
+  left: 908px;
+  top: 262px;
+  width: 252px;
+  height: 292px;
+  z-index: 8;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .6s ease;
+  background:
+    radial-gradient(58% 52% at 50% 44%, #ffe7abcc 0%, #ffc46b55 55%, transparent 76%),
+    linear-gradient(122deg, #ffffff33 0 16%, transparent 42%);
+  mix-blend-mode: screen;
+  filter: blur(1.5px);
+}
+.scene[data-scene="garden"].glass-lit .glass-glow {
+  opacity: .9;
+  animation: glass-breathe 6.5s ease-in-out infinite;
+}
+@keyframes glass-breathe {
+  50% { opacity: .62; }
+}

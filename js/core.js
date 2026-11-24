@@ -91,7 +91,12 @@
     milk: { name: '牛奶', kind: 'goods', price: 76, icon: 'item-milk', desc: '瓶壁上挂着一层薄薄的奶皮。' },
 
     // 镇上买的小东西
-    bouquet: { name: '一束花', kind: 'gift', price: 45, icon: 'item-bouquet', desc: '镇上花摊扎的，用旧报纸包着。' }
+    bouquet: { name: '一束花', kind: 'gift', price: 45, icon: 'item-bouquet', desc: '镇上花摊扎的，用旧报纸包着。' },
+
+    // 旧货摊上的三位老朋友：卖不上价，但他会认真收
+    key: { name: '一把旧钥匙', kind: 'gift', price: 6, icon: 'item-key', trinket: 'key', desc: '铜的，齿已经磨圆了。不知道开哪扇门。' },
+    marble: { name: '玻璃弹珠', kind: 'gift', price: 8, icon: 'item-marble', trinket: 'marble', desc: '对着光看，里面冻着一小段红。' },
+    postcard: { name: '褪色的明信片', kind: 'gift', price: 10, icon: 'item-postcard', trinket: 'postcard', desc: '字被水泡过，只剩一句「等我」还能认出来。' }
   };
   Object.entries(P.CROP).forEach(([id, crop]) => {
     P.ITEM[id] = { name: crop.name, kind: 'crop', crop: id, price: crop.sell, icon: crop.icon, desc: crop.note };
@@ -143,14 +148,42 @@
     }
   };
   P.ANIMAL_ORDER = ['chicken', 'sheep', 'cow'];
-  P.PASTURE_SLOTS = 6;
+  P.PASTURE_SLOTS = 6;       // 一开始就有的位置
+  P.PASTURE_MAX = 8;         // 接一段围栏以后能到 8
 
-  // 牧场里的位置（美术像素），前排放得靠下一点，看着有纵深
-  // 六个位置在围栏里分成前后两排，靠下的放大一点，看着有纵深
+  // 牧场里的位置（美术像素）：围栏里排成 3+3+2，靠下的放大一点，看着有纵深。
+  // 前六个是开局就有的，后两个要接一段围栏才站得上东西。
+  // 全都得落在栅栏里面 —— 出了围栏就会被前景挡住，看着像站在外面
   P.PASTURE_SPOTS = [
-    { x: 560, y: 590 }, { x: 680, y: 615 }, { x: 790, y: 645 },
-    { x: 470, y: 700 }, { x: 590, y: 735 }, { x: 700, y: 752 }
+    { x: 620, y: 545 }, { x: 760, y: 575 }, { x: 890, y: 610 },
+    { x: 530, y: 635 }, { x: 665, y: 660 }, { x: 800, y: 685 },
+    { x: 620, y: 710 }, { x: 740, y: 730 }
   ];
+
+  /* ------------------------------------------------------------ 大件 --- */
+  // 镇上杂货铺才卖的三样东西：买完立刻生效，不占背包
+  P.UPGRADE = {
+    glass: {
+      name: '温室玻璃', price: 1100, icon: 'item-glass',
+      note: '菜园边那间温室的门一直锁着，玻璃碎了一地。',
+      effect: '菜园里的作物每晚多长一天'
+    },
+    fence: {
+      name: '围栏木料', price: 900, icon: 'item-fence',
+      note: '把牧场的围栏往外接一段，多站得下两只。',
+      effect: '牧场从 6 个位置变成 8 个'
+    },
+    fuel: {
+      name: '油卡', price: 60, icon: 'item-fuel',
+      note: '加油站的老头认得这张卡，划一下就走。',
+      effect: '接下来 10 趟不收油钱'
+    }
+  };
+  P.UPGRADE_ORDER = ['glass', 'fence', 'fuel'];
+  // 数字型的（油卡剩几次）也走这里，0 就是没有
+  P.hasUp = (id) => Boolean(P.state && P.state.ups && P.state.ups[id]);
+  // 牧场现在能站几只
+  P.pastureCap = () => (P.hasUp('fence') ? P.PASTURE_MAX : P.PASTURE_SLOTS);
 
 
   P.icon = (name) => `assets/${name}.png`;
@@ -185,7 +218,9 @@
     bag: { seed_wheat: 4 },
     plots: Array.from({ length: P.PLOTS }, emptyPlot),
     garden: Array.from({ length: P.GARDEN_PLOTS }, emptyPlot),
-    animals: Array.from({ length: P.PASTURE_SLOTS }, () => null),
+    animals: Array.from({ length: P.PASTURE_MAX }, () => null),
+    // 买断的大件：glass 温室 / fence 围栏 / fuel 油卡（值是剩几次）
+    ups: {},
     hearts: 0,
     quest: 'wake',
     flags: {
@@ -193,7 +228,9 @@
       metBoy: false, caughtAny: false, slept: false, finished: false,
       recentEvents: [], dexPaid: 0, goalsDay: 0, goals: [], goalsPaid: 0,
       gardenLv: 0, gardenTold: false, townTrips: 0, truckTold: false,
-      cafeDay: 0, fedDay: 0
+      cafeDay: 0, fedDay: 0,
+      // 旧货摊：junkDay 是这批货是哪天摆出来的，junkSold 是这天卖掉的编号
+      junkDay: 0, junkSold: [], junkTold: false
     },
     caught: {},
     grown: {},
@@ -230,7 +267,8 @@
           const plot = (data.garden || [])[i];
           return plot && typeof plot === 'object' ? { ...emptyPlot(), ...plot } : emptyPlot();
         }),
-        animals: Array.from({ length: P.PASTURE_SLOTS }, (_, i) => (data.animals || [])[i] || null),
+        animals: Array.from({ length: P.PASTURE_MAX }, (_, i) => (data.animals || [])[i] || null),
+        ups: { ...(data.ups || {}) },
         stats: { ...base.stats, ...(data.stats || {}) }
       };
     } catch (_) { return null; }

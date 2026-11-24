@@ -789,7 +789,9 @@
       title: '小屋', kicker: 'MENU', body: `
         <p>第 ${save.day} 天 · ${P.PHASES[save.phase]}　金币 ${save.coins}　好感 ${save.hearts} / 10</p>
         <div class="qlist">
-          <div class="qitem"><span class="mark">?</span><div><strong>怎么玩</strong><br>点地面走动（键盘 WASD / 方向键）。<br>点菜地：翻土 → 播种 → 浇水 → 等一天。<br>农场上面是屋后菜园（二十格，土是现成的），右边是牧场（养鸡羊牛）。<br>农场左下角能开车去镇上：镇上有玉米南瓜种子、饲料、肥料和牲口。<br>点水面：抛竿，浮标沉下去再点一下。<br>小屋右下角能去客厅，客厅往里是澡堂，澡堂上楼是楼顶。<br>点床睡觉，进入第二天，作物和动物才会长。</div></div>
+          <div class="qitem"><span class="mark">?</span><div><strong>怎么玩</strong><br>点地面走动（键盘 WASD / 方向键）。<br>点菜地：翻土 → 播种 → 浇水 → 等一天。<br>农场上面是屋后菜园（二十格，土是现成的），右边是牧场（养鸡羊牛）。<br>农场左下角能开车去镇上（一趟 8 币）：市集卖玉米南瓜种子、饲料、肥料和牲口；
+        面包房能买吃的，井边有旧货摊，木亭子是杂货铺——温室玻璃和围栏木料在那儿买。
+        玻璃装上以后菜园一晚当两晚，木料接好以后牧场多站两只。<br>点水面：抛竿，浮标沉下去再点一下。<br>小屋右下角能去客厅，客厅往里是澡堂，澡堂上楼是楼顶。<br>点床睡觉，进入第二天，作物和动物才会长。</div></div>
           <div class="qitem"><span class="mark">♪</span><div><strong>声音</strong><br>右上角的 ♪ 可以开关音乐和音效。</div></div>
           <div class="qitem" id="menuRecord" role="button" tabindex="0"><span class="mark">★</span><div><strong>这些日子</strong><br>看看已经做成了哪些事。</div></div>
           <div class="qitem" id="menuMemories" role="button" tabindex="0"><span class="mark">♡</span><div><strong>照片墙</strong><br>两个人待在一起的那些时候，一格一格挂着。</div></div>
