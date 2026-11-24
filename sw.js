@@ -5,7 +5,7 @@
    - 外壳（html/css/js/图标）安装时先抓一遍，改版本号才会更新
    - 场景大图和精灵用「先用缓存，顺手更新」的方式，第二次进来就不用再下载
    - 只有 GET 且同源的请求才碰，别的（比如以后接的接口）直接放行 */
-const VERSION = 'pipi-v6';
+const VERSION = 'pipi-v7';
 const SHELL = [
   './',
   './index.html',
@@ -25,6 +25,7 @@ const SHELL = [
   './js/fishing.js',
   './js/rest.js',
   './js/npc.js',
+  './js/duo.js',
   './js/story.js',
   './js/dinner.js',
   './js/moments.js',
@@ -40,7 +41,9 @@ const SHELL = [
   './assets/bath-art.webp',
   './assets/roof-art.webp',
   './assets/moment-tv.webp',
-  './assets/moment-bath.webp'
+  './assets/moment-bath.webp',
+  './assets/moment-sleep.webp',
+  './assets/moment-kiss.webp'
 ];
 
 self.addEventListener('install', (event) => {

@@ -230,14 +230,20 @@
     const scale = U.lerp(depthConf.min, depthConf.max, t);
     npc.el.style.setProperty('--depth', scale.toFixed(3));
     // 你走近了，他会转过头来看你 —— 除非他手上正忙着
-    if (!npc.el.dataset.pose && !npc.el.dataset.moving && P.world && P.world.pos) {
+    if (!npc.faceMode && !npc.el.dataset.pose && !npc.el.dataset.moving && P.world && P.world.pos) {
       const dx = P.world.pos.x - npc.home.x;
       const dy = P.world.pos.y - npc.home.y;
       if (Math.abs(dx) < 300 && Math.abs(dy) < 260 && Math.abs(dx) > 12) {
         npc.facing = dx < 0 ? 'left' : 'right';
       }
     }
-    npc.el.style.setProperty('--row', npc.facing === 'right' ? 3 : 2);
+    // faceMode 是过场时强行定的朝向（背对镜头看电视、躺下、一起看星星）
+    const row = npc.faceMode === 'up' ? 1
+      : npc.faceMode === 'down' ? 0
+        : npc.faceMode === 'left' ? 2
+          : npc.faceMode === 'right' ? 3
+            : (npc.facing === 'right' ? 3 : 2);
+    npc.el.style.setProperty('--row', row);
     const walking = npc.el.dataset.moving === '1';
     npc.el.style.setProperty('--frame', walking ? Math.floor(clock / 118) % 4 : 0);
     // 站着的活人不会一动不动：呼吸 + 一点点重心偏移

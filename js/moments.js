@@ -1,5 +1,7 @@
-/* 两个人的几件小事：看电视、泡澡、看星星
-   每个场景里有一个只有两个人的角落。一天一次，好感 +1，体力回一点。 */
+/* 两个人的几件小事：看电视、泡澡、看星星、一起睡、亲一下
+   每个场景里有一个只有两个人的角落。一天一次，好感 +1 / +2，体力回一点。
+   演法是「先动起来，再给插画」：走过去、坐下、靠过去、蒸汽和心跳都发生在画面里，
+   插画只是这一段最后定住的一格。 */
 (function () {
   const P = window.P;
   const A = (P.actions = P.actions || {});
@@ -42,12 +44,14 @@
   }
 
   function approach(point, run) {
-    if (U.dist(P.world.pos, point) < 120) { run(); return; }
+    if (U.dist(P.world.pos, point) < 150) { run(); return; }
     P.world.walkTo(point.x, point.y, run);
   }
 
   function sheetWithArt(src, title, kicker, lines, footLabel) {
     return new Promise((resolve) => {
+      let done = false;
+      const finish = () => { if (done) return; done = true; resolve(); };
       P.ui.sheet({
         title,
         kicker,
@@ -55,42 +59,59 @@
           <div class="moment-lines">${lines.map((line) => `<p>${line}</p>`).join('')}</div>`,
         foot: [{
           label: footLabel || '嗯',
-          run: () => { P.ui.closeSheet(); resolve(); }
-        }]
+          run: () => { P.ui.closeSheet(); finish(); }
+        }],
+        // 点 × 或者点遮罩关掉也要继续往下走，不然会卡在 world.busy 里
+        onClose: finish
       });
     });
   }
 
+  function duo() { return P.duo; }
+
   /* -------------------------------------------------------- 一起看电视 --- */
   A.tv = function tv() {
     if (P.ui.modalOpen() || P.world.busy) return;
-    const spot = { x: 720, y: 856 };
-    const run = async () => {
-      P.world.look(700, 500);
+    approach({ x: 470, y: 800 }, async () => {
+      const D = duo();
+      if (!D.begin('tv')) return;
       P.audio && P.audio.sfx('page');
-      // 你在他旁边坐下，两个人并排，一起看那台旧电视
-      P.world.setPose('sit');
-      if (P.npc && P.npc.el && P.npc.here) {
-        const el = P.npc.el;
-        el.dataset.pose = 'sit';
-        el.style.transition = 'left .55s ease';
-        el.style.left = '600px';
-        P.npc.shadow.style.left = '600px';
-        setTimeout(() => { if (el) { el.style.transition = ''; } }, 580);
+      // 他先坐进沙发，你踩上去挨着他坐，两个人都朝电视那边看
+      D.npc({ x: 668, y: 574 }, 'seat', 'right');
+      await D.glide({ x: 594, y: 574 }, 620);
+      D.player(null, 'seat', 'right');
+      D.cine({ x: 626, y: 500 }, 1.5);
+      await D.wait(620);
+      D.say('npc', '开始了。');
+      await D.wait(1500);
+      // 靠垫被立起来一半，你的头刚好能靠住
+      D.lean('player', 'right-soft');
+      D.lean('npc', 'left-soft');
+      D.bits({ x: 420, y: 640 }, 'note', 2);
+      await D.wait(1100);
+      if (P.state.hearts >= 6) {
+        D.bits({ x: 418, y: 610 }, 'heart', 2);
+        D.say('npc', '困了就靠一会儿。');
+      } else {
+        D.say('player', '这个片子我好像看过。');
+        D.say('npc', '嗯。上次你也这么说。');
       }
+      await D.wait(1700);
+      D.bits({ x: 420, y: 640 }, 'zzz', 2);
+      await D.wait(900);
+
       const first = once('tvDay');
       const gain = reward('tvDay', 1, 2);
       P.daily && P.daily.bump('tv');
       const lines = first
         ? [
-          '你在他旁边坐下，沙发陷下去一小块。',
+          '电视里放着一部很老的片子，画面有点雪花。',
           '他把靠垫立起来一半，让你的头刚好能靠住。',
-          '电视里放着很老的片子，画面有点雪花。',
           '谁也没说话。片子里的人在吵架，你们在打瞌睡。'
         ]
         : [
-          '你坐过去，他往旁边挪了一点，给你让出位置。',
-          '片子还在放，剧情没怎么往前走。'
+          '片子还在放，剧情没怎么往前走。',
+          '你靠过去的时候，他往旁边挪了一点，给你让出位置。'
         ];
       if (P.weather && P.weather.is('rain')) {
         lines.push('外面的雨敲在窗上，比电视里的声音还清楚。');
@@ -99,53 +120,59 @@
         lines.push('他忽然说：你钓上来的那条锦鲤，我到现在还觉得不真实。');
       }
       await sheetWithArt('assets/moment-tv.webp', first ? '一起看电视' : '又是同一部片子', first ? 'TOGETHER' : 'AGAIN', lines, '看到这儿');
-      P.world.setPose('');
+      D.end();
       if (gain.energy) P.showHint(`+${gain.energy} 体力`, 1800);
       P.ui.task();
-    };
-    approach(spot, run);
+    });
   };
 
   /* ---------------------------------------------------------- 一起泡澡 --- */
   A.bath = function bath() {
     if (P.ui.modalOpen() || P.world.busy) return;
-    const spot = { x: 860, y: 950 };
-    const run = async () => {
-      P.world.look(440, 600);
+    approach({ x: 470, y: 920 }, async () => {
+      const D = duo();
+      if (!D.begin('bath')) return;
       P.audio && P.audio.sfx('water');
-      // 你坐进木桶边，他也并排坐下，两个人一起泡
-      P.world.setPose('sit');
-      if (P.npc && P.npc.el && P.npc.here) {
-        const el = P.npc.el;
-        el.dataset.pose = 'sit';
-        el.style.transition = 'left .55s ease';
-        el.style.left = '980px';
-        P.npc.shadow.style.left = '980px';
-        setTimeout(() => { if (el) { el.style.transition = ''; } }, 580);
-      }
+      // 他已经在桶里了，你从边上下去，两个人并排坐着，只露头和肩
+      D.npc({ x: 620, y: 692 }, '', 'up');
+      await D.glide({ x: 470, y: 692 }, 760);
+      D.player(null, '', 'up');
+      // 桶的前壁盖上来，人就真的在桶里，不是坐在桶前面
+      D.fg('tub', 'assets/bath-art.webp', { x: 292, y: 638, w: 660, h: 300 });
+      D.cine({ x: 546, y: 580 }, 1.28);
+      await D.wait(700);
+      D.steam({ x: 470, y: 620 }, 5);
+      D.steam({ x: 604, y: 620 }, 3);
+      D.say('npc', '水正好。');
+      await D.wait(1500);
+      D.bits({ x: 546, y: 600 }, 'heart', 2);
+      D.say('player', '烫……不过挺舒服的。');
+      await D.wait(1400);
+      D.steam({ x: 546, y: 600 }, 4);
+      if (P.state.hearts >= 6) D.say('npc', '别泡太久，会晕。');
+      await D.wait(1300);
+
       const first = once('bathDay');
       const gain = reward('bathDay', 1, 4);
       P.daily && P.daily.bump('bath');
       const lines = first
         ? [
-          '你坐进木桶，热水慢慢没过肩膀。',
-          '他也在旁边坐下，把毛巾叠成方块，放在你头上，说这样不容易头晕。',
           '水很烫，下去的时候要一点一点来。',
+          '他把毛巾叠成方块，放在你头上，说这样不容易头晕。',
           '蒸汽把窗子糊白了。两个人都不太想说话。'
         ]
         : [
-          '你坐进去，他也并排坐下。水还是那么烫，你已经能一口气坐到底了。',
+          '水还是那么烫。你已经能一口气坐下去了。',
           '他往水里又添了一瓢，说泡透了再出来。'
         ];
       if (P.state.flags.rainCatch) {
         lines.push('院子里那只雨蛙又开始叫了。你俩同时往窗外看了一眼。');
       }
       await sheetWithArt('assets/moment-bath.webp', '一起泡澡', 'SOAK', lines, '泡够了');
-      P.world.setPose('');
+      D.end();
       if (gain.energy) P.showHint(`+${gain.energy} 体力，身上轻了`, 2200);
       P.ui.task();
-    };
-    approach(spot, run);
+    });
   };
 
   /* -------------------------------------------------------- 坐下看星星 --- */
@@ -163,12 +190,27 @@
 
   A.stars = function stars() {
     if (P.ui.modalOpen() || P.world.busy) return;
-    const spot = { x: 330, y: 900 };
-    const run = async () => {
+    approach({ x: 430, y: 930 }, async () => {
+      const D = duo();
+      if (!D.begin('stars')) return;
       const night = S().phase >= 2;
-      P.world.look(900, 200);
-      P.world.setPose('sit');
+      // 他挨着你坐下，两个人都背对镜头，看前面那片天
+      D.npc({ x: 244, y: 812 }, 'seat', 'up');
+      await D.glide({ x: 150, y: 812 }, 700);
+      D.player(null, 'seat', 'up');
+      D.cine({ x: 198, y: 748 }, 1.42);
       if (night) shootingStars();
+      await D.wait(900);
+      if (night) {
+        D.bits({ x: 198, y: 740 }, 'spark', 3);
+        D.say('npc', '那颗最亮的是织女星。');
+      } else {
+        D.say('npc', '云在往东边走。');
+      }
+      await D.wait(1500);
+      D.lean('npc', 'left-soft');
+      await D.wait(900);
+
       const first = once('starDay');
       const gain = reward('starDay', 1, 2);
       P.daily && P.daily.bump('stars');
@@ -199,28 +241,38 @@
         }
       }
       await P.ui.say(lines, { mode: 'rest', endLabel: '再坐一会儿' });
-      P.world.setPose('');
+      D.end();
       if (gain.energy) P.showHint(`+${gain.energy} 体力`, 1800);
       P.ui.task();
-    };
-    approach(spot, run);
+    });
   };
 
   /* ------------------------------------------------------- 睡前亲一下 --- */
-  // 好感够了，睡前可以轻轻亲一下额头，然后一起睡
   A.kiss = function kiss() {
     if (P.ui.modalOpen() || P.world.busy) return;
-    const spot = { x: 560, y: 700 };
-    const run = async () => {
-      if (P.npc && P.npc.summon) {
-        P.npc.summon('cottage', { x: 470, y: 820 });
-        const el = P.npc.el;
-        if (el) { el.dataset.pose = 'sit'; el.dataset.hold = ''; }
-      }
-      P.world.look(340, 560);
-      P.world.setPose('sleep');
+    approach({ x: 560, y: 700 }, async () => {
+      const D = duo();
+      if (!D.begin('sleep')) return;
+      // 两个人都躺进被子里，被子盖到肩膀，只露头
+      D.npc({ x: 396, y: 540 }, 'sleep', 'down');
+      await D.glide({ x: 246, y: 540 }, 780);
+      D.player(null, 'sleep', 'down');
+      D.fg('quilt', 'assets/room-birthday-26-optimized.webp', { x: 88, y: 556, w: 430, h: 246 });
+      D.cine({ x: 316, y: 512 }, 1.52);
+      await D.wait(800);
+      D.say('player', '晚安。');
+      D.say('npc', '……嗯。');
+      await D.wait(1500);
+      // 他侧过来，两个人额头凑到一起
+      D.npc({ x: 334, y: 540 }, 'sleep', 'down');
+      D.lean('npc', 'left');
+      D.lean('player', 'right');
       P.audio && P.audio.sfx('heart');
-      if (P.npc) P.npc.floatHearts();
+      await D.wait(900);
+      D.bits({ x: 286, y: 520 }, 'spark', 4);
+      D.bits({ x: 286, y: 530 }, 'heart', 3);
+      await D.wait(1500);
+
       const first = once('kissDay');
       const gain = reward('kissDay', 2, 0);
       P.daily && P.daily.bump('kiss');
@@ -238,28 +290,31 @@
         lines.push('他把你往怀里带了带，下巴抵在你发顶。');
       }
       await sheetWithArt('assets/moment-kiss.webp', first ? '轻轻亲一下' : '又是这个吻', first ? 'A KISS' : 'AGAIN', lines, '晚安');
-      P.world.setPose('');
       if (gain.hearts) { P.showHint(`+${gain.hearts} 好感`, 1800); if (P.npc) P.npc.floatHearts(); }
+      D.end();
       await P.sleep();
-    };
-    approach(spot, run);
+    });
   };
 
   /* ------------------------------------------------------- 一起睡觉 --- */
-  // 傍晚/夜里睡觉，可以拉上他一起
   A.sleepTogether = function sleepTogether() {
     if (P.ui.modalOpen() || P.world.busy) return;
-    const spot = { x: 560, y: 700 };
-    const run = async () => {
-      // 他坐到你床边来，你躺下
-      if (P.npc && P.npc.summon) {
-        P.npc.summon('cottage', { x: 470, y: 820 });
-        const el = P.npc.el;
-        if (el) { el.dataset.pose = 'sit'; el.dataset.hold = ''; }
-      }
-      P.world.look(340, 560);
-      P.world.setPose('sleep');
-      P.audio && P.audio.sfx('page');
+    approach({ x: 560, y: 700 }, async () => {
+      const D = duo();
+      if (!D.begin('sleep')) return;
+      D.npc({ x: 396, y: 540 }, 'sleep', 'down');
+      await D.glide({ x: 246, y: 540 }, 780);
+      D.player(null, 'sleep', 'down');
+      D.fg('quilt', 'assets/room-birthday-26-optimized.webp', { x: 88, y: 556, w: 430, h: 246 });
+      D.cine({ x: 316, y: 512 }, 1.48);
+      await D.wait(800);
+      D.say('npc', '……灯，我关了。');
+      await D.wait(1500);
+      D.npc({ x: 352, y: 540 }, 'sleep', 'down');
+      D.lean('npc', 'left-soft');
+      D.bits({ x: 300, y: 520 }, 'zzz', 3);
+      await D.wait(1600);
+
       const first = once('sleepDay');
       const gain = reward('sleepDay', 2, 0);
       P.daily && P.daily.bump('sleep');
@@ -278,52 +333,32 @@
         lines.push('他翻了个身，小声说：明天也这样吧。');
       }
       await sheetWithArt('assets/moment-sleep.webp', first ? '一起睡吧' : '又是这一晚', first ? 'GOODNIGHT' : 'AGAIN', lines, '晚安');
-      P.world.setPose('');
       if (gain.hearts) { P.showHint(`+${gain.hearts} 好感`, 1800); if (P.npc) P.npc.floatHearts(); }
-      // 一起睡完，天也亮了
+      D.end();
       await P.sleep();
-    };
-    approach(spot, run);
+    });
   };
 
   /* ------------------------------------------------------- 他的位置 --- */
-  // 客厅、澡堂、楼顶是他自己也会上去的地方：一到那儿，他就在附近
+  // 客厅、澡堂、楼顶是他自己也会待着的地方：一到那儿，他就在自己的位置上
+  const SEATS = {
+    tvroom: { spot: { x: 668, y: 574 }, pose: 'seat', face: 'right' },
+    bath: { spot: { x: 620, y: 692 }, pose: '', face: 'up' },
+    roof: { spot: { x: 244, y: 812 }, pose: 'seat', face: 'up' }
+  };
+
   P.moments = { onEnter };
   function onEnter(scene) {
     if (!P.npc || !P.npc.summon) return;
-    // 楼顶：他也会上去，站在栏杆边（白天黑夜都行）
-    if (scene === 'roof') {
-      const spot = { x: 1082, y: 918 };
-      if (!P.npc.summon(scene, spot)) return;
-      setTimeout(() => {
-        const el = P.npc && P.npc.el;
-        if (!el || P.npc.forced !== 'roof') return;
-        el.dataset.pose = 'sit';
-        el.dataset.hold = '';
-      }, 420);
-      return;
-    }
-    // 客厅：他先一步坐在沙发上等你（两个人一起看电视的地方）
-    if (scene === 'tvroom') {
-      const spot = { x: 560, y: 836 };
-      if (!P.npc.summon(scene, spot)) return;
-      setTimeout(() => {
-        const el = P.npc && P.npc.el;
-        if (!el || P.npc.forced !== 'tvroom') return;
-        el.dataset.pose = 'sit';
-        el.dataset.hold = '';
-      }, 420);
-      return;
-    }
-    // 澡堂：他站在木桶边上，等水热
-    if (scene === 'bath') {
-      const spot = { x: 1050, y: 940 };
-      if (!P.npc.summon(scene, spot)) return;
-      setTimeout(() => {
-        const el = P.npc && P.npc.el;
-        if (!el || P.npc.forced !== 'bath') return;
-        el.dataset.hold = '';
-      }, 420);
-    }
+    const seat = SEATS[scene];
+    if (!seat) return;
+    if (!P.npc.summon(scene, seat.spot)) return;
+    setTimeout(() => {
+      const el = P.npc && P.npc.el;
+      if (!el || P.npc.forced !== scene) return;
+      P.npc.faceMode = seat.face;
+      el.dataset.pose = seat.pose;
+      el.dataset.hold = '';
+    }, 420);
   }
 })();

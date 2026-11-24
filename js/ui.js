@@ -392,7 +392,10 @@
       }
     };
 
-    ui.sheet({ title: '背包', kicker: 'BAG', body: (body) => make(body) });
+    ui.sheet({
+      title: '背包', kicker: 'BAG', body: (body) => make(body),
+      foot: [{ label: '种子箱 · 买种子', run: () => { ui.closeSheet(); setTimeout(() => ui.shop(), 60); } }]
+    });
   };
 
   /* -------------------------------------------------------------- 图鉴 --- */
@@ -635,39 +638,57 @@
   /* -------------------------------------------------------------- 商店 --- */
   ui.shop = function shop() {
     const body = document.createElement('div');
-    body.innerHTML = '<p>木箱里放着种子。种下去，浇水，等它长大。</p>';
+    body.innerHTML = `<p class="shop-tip">木箱里放着种子。种下去、浇上水，等它长大。
+      收的时候会留下 <b>一颗种子</b>，所以只要还在种，就不会真的断种。<br>
+      手头有 <b>${P.state.coins}</b> 金币。</p>`;
+    const head0 = document.createElement('h4');
+    head0.className = 'shop-head';
+    head0.textContent = '种子';
+    body.appendChild(head0);
     Object.keys(P.CROP).forEach((id) => {
       const seedId = P.CROP[id].seed;
       const seed = P.ITEM[seedId];
+      const have = P.bagCount(seedId);
       const row = document.createElement('div');
       row.className = 'shop-row';
       row.innerHTML = `
         <img src="${P.icon(seed.icon)}" alt="">
         <div class="info">
-          <strong>${seed.name}</strong>
+          <strong>${seed.name}${have ? ` <em class="own">有 ${have}</em>` : ''}</strong>
           <small>${P.CROP[id].days} 天 · 卖 ${P.CROP[id].sell} 币</small>
         </div>
         <span class="price"><img src="assets/ui-coin.png" alt="">${seed.price}</span>`;
-      const buy = document.createElement('button');
-      buy.type = 'button';
-      buy.className = 'btn';
-      buy.textContent = '买一颗';
-      buy.addEventListener('click', () => {
-        if (P.state.coins < seed.price) {
-          P.ui.toast('金币不够，先去卖点东西', 'ui-coin');
-          P.audio && P.audio.sfx('nope');
-          return;
-        }
-        P.state.coins -= seed.price;
-        P.addItem(seedId, 1);
-        P.audio && P.audio.sfx('coin');
-        ui.toast(`买到 ${seed.name}`, seed.icon);
-        ui.hud();
-        P.save();
-      });
-      row.appendChild(buy);
+      const buyOne = document.createElement('button');
+      buyOne.type = 'button';
+      buyOne.className = 'btn';
+      buyOne.textContent = '买一颗';
+      buyOne.addEventListener('click', () => buySeed(seedId, 1));
+      const buyFive = document.createElement('button');
+      buyFive.type = 'button';
+      buyFive.className = 'btn pale';
+      buyFive.textContent = '×5';
+      buyFive.addEventListener('click', () => buySeed(seedId, 5));
+      row.appendChild(buyOne);
+      row.appendChild(buyFive);
       body.appendChild(row);
     });
+
+    function buySeed(seedId, n) {
+      const seed = P.ITEM[seedId];
+      const cost = seed.price * n;
+      if (P.state.coins < cost) {
+        P.ui.toast(n > 1 ? `金币不够，${n} 颗要 ${cost} 币` : '金币不够，先去卖点东西', 'ui-coin');
+        P.audio && P.audio.sfx('nope');
+        return;
+      }
+      P.state.coins -= cost;
+      P.addItem(seedId, n);
+      P.audio && P.audio.sfx('coin');
+      ui.toast(`买到 ${seed.name} ×${n}`, seed.icon);
+      ui.hud();
+      P.save();
+      ui.shop();
+    }
 
     // 杂货：金币除了买种子，还能换几件顺手的家伙
     const head = document.createElement('h4');
@@ -732,7 +753,8 @@
         { label: P.audio.on ? '关掉音乐' : '打开音乐', pale: true, run: () => { P.audio.toggle(); ui.hud(); ui.closeSheet(); } },
         restart,
         { label: '回到标题', pale: true, run: () => { P.save(); location.href = 'index.html'; } },
-        { label: '重看序章', pale: true, run: () => { P.save(); location.href = 'story.html'; } }
+        { label: '重看序章', pale: true, run: () => { P.save(); location.href = 'story.html'; } },
+        { label: '种子箱', pale: true, run: () => { ui.closeSheet(); setTimeout(() => ui.shop(), 60); } }
       ],
       onMount: (body, wrap) => {
         const row = wrap.querySelector('#menuRecord');
@@ -782,6 +804,19 @@
     if (menu) menu.addEventListener('click', () => { P.audio && P.audio.sfx('click'); ui.menu(); });
     const dayChip = $('dayChip');
     if (dayChip) dayChip.addEventListener('click', () => { P.audio && P.audio.sfx('click'); ui.quests(); });
+    // 点金币直接开种子箱：手机上不用跑回农场找那个木箱
+    const coinChip = document.getElementById('coinButton') || document.querySelector('.chip[title="金币"]');
+    if (coinChip) {
+      coinChip.setAttribute('role', 'button');
+      coinChip.setAttribute('tabindex', '0');
+      coinChip.style.cursor = 'pointer';
+      coinChip.title = '金币 · 点开种子箱';
+      const openShop = () => { P.audio && P.audio.sfx('click'); ui.shop(); };
+      coinChip.addEventListener('click', openShop);
+      coinChip.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openShop(); }
+      });
+    }
     ui.hud();
   };
 })();

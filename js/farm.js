@@ -207,7 +207,7 @@
   function needSeed() {
     const seeds = Object.keys(P.ITEM).filter((id) => P.ITEM[id].kind === 'seed' && P.bagCount(id) > 0);
     if (!seeds.length) {
-      P.ui.toast('没有种子了，去种子箱买一点', 'seed-wheat');
+      P.ui.toast('没有种子了 · 点顶上的金币，或者点左边的种子箱', 'seed-wheat');
       P.audio && P.audio.sfx('nope');
       return null;
     }
@@ -309,6 +309,8 @@
     const crop = P.CROP[cropId];
     const amount = 1 + (P.hasTool('basket') ? 1 : 0) + (Math.random() < 0.28 ? 1 : 0);
     P.addItem(cropId, amount);
+    // 收的时候留一颗种子：这样只要还在种，就永远不会彻底断种
+    P.addItem(crop.seed, 1);
     P.state.grown[cropId] = (P.state.grown[cropId] || 0) + amount;
     P.state.stats.harvested += amount;
     plot.seed = null;
@@ -321,7 +323,7 @@
       P.world.setPose('reach', 520);
       setTimeout(() => P.world && P.world.hold(''), 620);
     }
-    P.ui.toast(`收成 ${crop.name} ×${amount}`, crop.icon);
+    P.ui.toast(`收成 ${crop.name} ×${amount} · 留了 1 颗种子`, crop.icon);
     pop(index, `+${amount}`);
     harvestBurst(index, crop.icon, amount);
     paint();
@@ -412,8 +414,8 @@
         const close = (s.hearts || 0) >= 4;
         await P.ui.say([
           { who: '旁白', text: P.npc && P.npc.here ? '夜已经深了。他还在屋里，灯还没灭。' : '夜已经深了。他在外头忙，一会儿也该回来了。', choices: [
-            ...(close ? [{ label: '靠过去亲一下', end: true, run: () => { A.kiss && A.kiss(); } }] : []),
-            { label: '和他一起睡', end: true, run: () => { A.sleepTogether && A.sleepTogether(); } },
+            ...(close ? [{ label: '靠过去亲一下', end: true, run: () => { setTimeout(() => A.kiss && A.kiss(), 90); } }] : []),
+            { label: '和他一起睡', end: true, run: () => { setTimeout(() => A.sleepTogether && A.sleepTogether(), 90); } },
             { label: '自己睡', end: true, run: () => { doSleep(); } }
           ] }
         ], { endLabel: '睡吧' });

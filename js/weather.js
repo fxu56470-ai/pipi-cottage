@@ -28,6 +28,35 @@
     return node;
   }
 
+  /* 下不下雨、在哪能看见雨，是两件事：
+     雨丝只在露天的地方（农场、湖边、楼顶）出现，
+     屋里只在窗户那一片留一层水痕。 */
+  const OUTDOOR = ['farm', 'lake', 'roof'];
+  const WINDOWS = {
+    cottage: { left: 306, top: 106, width: 346, height: 188 },
+    tvroom: { left: 528, top: 142, width: 300, height: 208 },
+    bath: { left: 1256, top: 160, width: 172, height: 300 }
+  };
+
+  function windowRain(sceneKey) {
+    const box = WINDOWS[sceneKey];
+    if (!box) return null;
+    const scene = document.querySelector(`.scene[data-scene="${sceneKey}"]`);
+    if (!scene) return null;
+    let node = scene.querySelector('.rain-win');
+    if (!node) {
+      node = document.createElement('i');
+      node.className = 'rain-win';
+      node.setAttribute('aria-hidden', 'true');
+      node.style.left = `${box.left}px`;
+      node.style.top = `${box.top}px`;
+      node.style.width = `${box.width}px`;
+      node.style.height = `${box.height}px`;
+      scene.appendChild(node);
+    }
+    return node;
+  }
+
   let lastKind = '';
   P.WEATHER = KINDS;
 
@@ -35,6 +64,19 @@
     get() { return (P.state && P.state.weather) || 'sun'; },
     info() { return KINDS[this.get()] || KINDS.sun; },
     is(kind) { return this.get() === kind; },
+    /* 照着“现在在哪”决定雨画在哪儿 */
+    syncRain() {
+      const kind = this.get();
+      const sceneKey = (P.world && P.world.current) || 'cottage';
+      const outdoor = OUTDOOR.includes(sceneKey);
+      const rain = layer();
+      if (rain) rain.classList.toggle('on', kind === 'rain' && outdoor);
+      Object.keys(WINDOWS).forEach((key) => {
+        const node = windowRain(key);
+        if (node) node.classList.toggle('on', kind === 'rain' && key === sceneKey);
+      });
+      P.audio && P.audio.indoor && P.audio.indoor(!outdoor);
+    },
     roll(prevDay) {
       const s = P.state;
       s.weather = rollWeather(s.weather, s.day);
@@ -53,8 +95,7 @@
         mark.title = info.name;
         mark.hidden = kind === 'sun';
       }
-      const rain = layer();
-      if (rain) rain.classList.toggle('on', kind === 'rain');
+      this.syncRain();
       P.audio && P.audio.rain && P.audio.rain(kind === 'rain');
       // 天变了，他会换个地方待着（下雨就不站在露天的地里了）
       if (changed && P.npc && P.npc.enter && P.world) {

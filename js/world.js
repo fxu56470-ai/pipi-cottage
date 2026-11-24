@@ -106,8 +106,9 @@
     moving: false,
     busy: false,
     hintTimer: null,
-    cam: { scale: 1, x: 0, y: 0, base: 1 },
-    focus: { x: 768, y: 512 }
+    cam: { scale: 1, x: 0, y: 0, base: 1, zoom: 1 },
+    focus: { x: 768, y: 512 },
+    cine: null
   };
   P.world = world;
 
@@ -257,13 +258,54 @@
     const wide = W / H;
     const push = wide > 1.9 ? 1.45 : wide > 1.72 ? 1.26 : 1.12;
     const base = portrait ? cover : Math.min(cover, contain * push);
-    const zoom = 1;
+    const zoom = world.cam.zoom || 1;
     world.cam.base = base;
     world.cam.scale = base * zoom;
     world.cam.w = W;
     world.cam.h = H;
     placeCamera(snap);
     layoutPortraitExits(portrait);
+    buildSceneActions(portrait);
+  }
+
+  // 竖屏时场景被裁得很窄，沙发、木桶这些热点可能根本不在画面里。
+  // 这里把当前场景「能做的事」排成一列小按钮贴在右边，手机上也点得到。
+  const ACTION_PRIORITY = ['shop', 'bed', 'tv', 'bath', 'stars', 'fish', 'rest', 'cake', 'gifts', 'shelf', 'gallery'];
+  let actionsBar = null;
+  function buildSceneActions(portrait) {
+    if (!actionsBar) {
+      actionsBar = document.createElement('nav');
+      actionsBar.className = 'scene-actions';
+      actionsBar.setAttribute('aria-label', '可做的事');
+      el.stage.appendChild(actionsBar);
+    }
+    if (!portrait) { actionsBar.hidden = true; return; }
+    const scene = document.querySelector('.scene.active');
+    if (!scene) { actionsBar.hidden = true; return; }
+    const spots = [...scene.querySelectorAll('.spot')]
+      .filter((node) => node.dataset.action && node.dataset.action !== 'look' && !node.hidden)
+      .sort((a, b) => {
+        const ia = ACTION_PRIORITY.indexOf(a.dataset.action);
+        const ib = ACTION_PRIORITY.indexOf(b.dataset.action);
+        return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+      })
+      .slice(0, 4);
+    actionsBar.hidden = spots.length === 0;
+    actionsBar.innerHTML = '';
+    spots.forEach((spot) => {
+      const label = spot.querySelector('.spot-label');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'scene-action';
+      button.textContent = label ? label.textContent : spot.dataset.action;
+      button.addEventListener('click', () => {
+        P.audio && P.audio.start();
+        P.audio && P.audio.sfx('click');
+        const act = P.actions && P.actions[spot.dataset.action];
+        if (act) act(spot);
+      });
+      actionsBar.appendChild(button);
+    });
   }
 
   // 竖屏 cover 会裁掉场景两侧，出口按钮贴边就看不见。
@@ -309,6 +351,15 @@
     if (snap) { world.cam.x = tx; world.cam.y = ty; }
     el.art.style.transform = `translate3d(${tx.toFixed(2)}px, ${ty.toFixed(2)}px, 0) scale(${scale.toFixed(4)})`;
   }
+
+  /* 过场用：把镜头推近某一点，演完再放开。zoom 传 null 表示还原 */
+  world.cine = function cine(focus, zoom) {
+    if (!focus) {
+      world.cineSpot = null;
+      return;
+    }
+    world.cineSpot = { x: focus.x, y: focus.y, zoom: zoom || 1.18 };
+  };
 
   P.screenToArt = function screenToArt(clientX, clientY) {
     const rect = el.stage.getBoundingClientRect();
@@ -545,8 +596,20 @@
     // 相机慢慢跟人；往哪边走就先偏过去一点，看得到前面
     const leadX = world.moving ? (world.dir === 'left' ? -26 : world.dir === 'right' ? 26 : 0) : 0;
     const leadY = world.moving ? (world.dir === 'up' ? -18 : world.dir === 'down' ? 12 : 0) : 0;
-    world.focus.x = U.lerp(world.focus.x, world.pos.x + leadX, 0.1);
-    world.focus.y = U.lerp(world.focus.y, world.pos.y + leadY, 0.1);
+    const cineSpot = world.cineSpot;
+    if (cineSpot) {
+      // 过场：镜头往两个人身上推近，别跟着玩家走开
+      world.focus.x = U.lerp(world.focus.x, cineSpot.x, 0.085);
+      world.focus.y = U.lerp(world.focus.y, cineSpot.y, 0.085);
+    } else {
+      world.focus.x = U.lerp(world.focus.x, world.pos.x + leadX, 0.1);
+      world.focus.y = U.lerp(world.focus.y, world.pos.y + leadY, 0.1);
+    }
+    const wantZoom = cineSpot ? cineSpot.zoom : 1;
+    if (Math.abs((world.cam.zoom || 1) - wantZoom) > 0.002) {
+      world.cam.zoom = U.lerp(world.cam.zoom || 1, wantZoom, 0.08);
+      world.cam.scale = world.cam.base * world.cam.zoom;
+    }
     if (world.cam.scale && el.art) placeCamera(false);
 
     paintAvatar();
@@ -610,6 +673,8 @@
       sceneNode.appendChild(el.avatar);
     }
     world.focus = { ...world.pos };
+    world.cineSpot = null;
+    world.cam.zoom = 1;
     const stageNode = document.getElementById('stage');
     if (stageNode) stageNode.dataset.scene = sceneKey;
     P.state.scene = sceneKey;
@@ -631,6 +696,7 @@
       P.npc.enter(sceneKey);
     }
     P.moments && P.moments.onEnter && P.moments.onEnter(sceneKey);
+    P.weather && P.weather.syncRain && P.weather.syncRain();
     P.world.onScene && P.world.onScene(sceneKey);
     P.save();
     if (!opts.quiet) sceneWipe();

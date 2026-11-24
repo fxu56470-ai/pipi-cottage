@@ -365,7 +365,7 @@
           lp.frequency.value = 2600;
           const gain = ac.createGain();
           gain.gain.setValueAtTime(0.0001, ac.currentTime);
-          gain.gain.linearRampToValueAtTime(0.028, ac.currentTime + 1.6);
+          gain.gain.linearRampToValueAtTime(audio.indoor ? 0.011 : 0.028, ac.currentTime + 1.6);
           src.connect(hp); hp.connect(lp); lp.connect(gain); gain.connect(ac.destination);
           src.start();
           audio.rainNode = src;
@@ -379,6 +379,17 @@
           gain.gain.linearRampToValueAtTime(0.0001, ac.currentTime + 0.7);
           setTimeout(() => { try { src.stop(); } catch (_) {} }, 900);
         }
+      } catch (_) {}
+    },
+    // 进到屋里，雨声要闷一点、小一点，像隔着一层墙
+    indoor(on) {
+      audio.indoor = !!on;
+      if (!audio.rainGain || !audio.on) return;
+      try {
+        const ac = ctx();
+        const level = on ? 0.011 : 0.028;
+        audio.rainGain.gain.cancelScheduledValues(ac.currentTime);
+        audio.rainGain.gain.linearRampToValueAtTime(level, ac.currentTime + 0.9);
       } catch (_) {}
     },
     tone(freq = 660, dur = 0.12, vol = 0.05, wave = 'sine') {
