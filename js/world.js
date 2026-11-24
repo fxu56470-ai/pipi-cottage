@@ -665,8 +665,6 @@
     world.moving = false;
     world.setPose('');
     world.hold('');
-    world.setPose('');
-    world.hold('');
 
     document.querySelectorAll('.scene').forEach((node) => {
       node.classList.toggle('active', node.dataset.scene === sceneKey);
