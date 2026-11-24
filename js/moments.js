@@ -69,6 +69,13 @@
 
   function duo() { return P.duo; }
 
+  /* 第一次做某件事，就在照片墙上留一格 */
+  function record(key) {
+    if (P.remember && P.remember(key)) {
+      P.ui.toast('这一格，记在照片墙上了', 'ui-heart');
+    }
+  }
+
   /* -------------------------------------------------------- 一起看电视 --- */
   A.tv = function tv() {
     if (P.ui.modalOpen() || P.world.busy) return;
@@ -103,6 +110,7 @@
       const first = once('tvDay');
       const gain = reward('tvDay', 1, 2);
       P.daily && P.daily.bump('tv');
+      record('tv');
       const lines = first
         ? [
           '电视里放着一部很老的片子，画面有点雪花。',
@@ -155,6 +163,7 @@
       const first = once('bathDay');
       const gain = reward('bathDay', 1, 4);
       P.daily && P.daily.bump('bath');
+      record('bath');
       const lines = first
         ? [
           '水很烫，下去的时候要一点一点来。',
@@ -214,6 +223,7 @@
       const first = once('starDay');
       const gain = reward('starDay', 1, 2);
       P.daily && P.daily.bump('stars');
+      record('stars');
       P.audio && P.audio.sfx('water');
       const lines = [];
       if (night) {
@@ -276,6 +286,7 @@
       const first = once('kissDay');
       const gain = reward('kissDay', 2, 0);
       P.daily && P.daily.bump('kiss');
+      record('kiss');
       const lines = first
         ? [
           '你凑近一点，在他额头上轻轻落下一个吻。',
@@ -302,33 +313,57 @@
     approach({ x: 560, y: 700 }, async () => {
       const D = duo();
       if (!D.begin('sleep')) return;
+      const warm = (S().hearts || 0) >= 6;
+      // 一、他先到床边站着，把台灯拧暗
+      D.npc({ x: 468, y: 636 }, '', 'left');
+      await D.glide({ x: 330, y: 640 }, 760);
+      D.cine({ x: 316, y: 520 }, 1.34);
+      await D.wait(700);
+      D.say('npc', '……灯，我关了。');
+      await D.wait(1300);
+      // 二、两个人都钻进被子里（身体交给被子挡住，只露头）
       D.npc({ x: 396, y: 540 }, 'sleep', 'down');
-      await D.glide({ x: 246, y: 540 }, 780);
       D.player(null, 'sleep', 'down');
       D.fg('quilt', 'assets/room-birthday-26-optimized.webp', { x: 88, y: 556, w: 430, h: 246 });
-      D.cine({ x: 316, y: 512 }, 1.48);
-      await D.wait(800);
-      D.say('npc', '……灯，我关了。');
-      await D.wait(1500);
-      D.npc({ x: 352, y: 540 }, 'sleep', 'down');
+      D.cine({ x: 316, y: 512 }, 1.5);
+      await D.wait(900);
+      // 三、被子底下挤一挤，他往你这边挪
+      D.npc({ x: 348, y: 540 }, 'sleep', 'down');
       D.lean('npc', 'left-soft');
-      D.bits({ x: 300, y: 520 }, 'zzz', 3);
-      await D.wait(1600);
+      D.bits({ x: 300, y: 516 }, 'zzz', 2);
+      await D.wait(1000);
+      // 四、睡前那几句悄悄话，好感越高他话越多
+      D.say('player', '晚安。');
+      await D.wait(1200);
+      if (warm) {
+        D.say('npc', '……嗯。手给我。');
+        D.bits({ x: 300, y: 534 }, 'heart', 2);
+        await D.wait(1600);
+      } else {
+        D.say('npc', '被子里……有点挤。');
+        await D.wait(1400);
+      }
+      D.bits({ x: 330, y: 512 }, 'zzz', 3);
+      await D.wait(1100);
 
       const first = once('sleepDay');
       const gain = reward('sleepDay', 2, 0);
       P.daily && P.daily.bump('sleep');
+      record('sleep');
+      // 记一笔：昨晚是一起睡的，明早的起床信会提一句
+      S().flags.sleptWithDay = S().day;
       const lines = first
         ? [
           '你往床里挪了挪，给他留出一半。',
           '他先是僵了一下，然后很小声地掀开被子，躺到你旁边。',
-          '灯还亮着。你们谁也没先开口，就听着彼此的呼吸。',
+          '灯灭了。你们谁也没先开口，就听着彼此的呼吸。',
           '不知道过了多久，他的呼吸慢下来，人也睡着了。'
         ]
         : [
           '今晚也留了一半被子给他。',
           '他已经不推辞了，躺下的时候肩膀放松下来。'
         ];
+      if (warm) lines.push('被子底下，他的手很轻地扣住了你的。');
       if (P.state.hearts >= 8) {
         lines.push('他翻了个身，小声说：明天也这样吧。');
       }
@@ -346,11 +381,28 @@
     bath: { spot: { x: 620, y: 692 }, pose: '', face: 'up' },
     roof: { spot: { x: 244, y: 812 }, pose: 'seat', face: 'up' }
   };
+  // 夜里的小屋：他坐在床沿等你，床那个热点也会改成「一起睡」
+  const BEDSIDE = { spot: { x: 470, y: 664 }, pose: '', face: 'left' };
 
   P.moments = { onEnter };
   function onEnter(scene) {
     if (!P.npc || !P.npc.summon) return;
-    const seat = SEATS[scene];
+    const late = (P.state.phase || 0) >= 2;
+    const close = (P.state.hearts || 0) >= 4;
+    const bedLabel = document.querySelector('.spot[data-action="bed"] .spot-label');
+    if (bedLabel) {
+      const want = late ? '一起睡' : '睡觉';
+      if (bedLabel.textContent !== want) bedLabel.textContent = want;
+    }
+    if (P.world && P.world.refreshActions) P.world.refreshActions();
+    // 夜里回小屋：他就在床边，给一句提示，免得没人发现床能一起睡
+    if (scene === 'cottage' && late && close && P.state.flags.bedHintDay !== P.state.day) {
+      P.state.flags.bedHintDay = P.state.day;
+      setTimeout(() => {
+        if (P.ui && P.ui.toast) P.ui.toast('他先把灯拧暗了 · 点床，可以一起睡', 'ui-heart');
+      }, 900);
+    }
+    const seat = SEATS[scene] || (scene === 'cottage' && late && close ? BEDSIDE : null);
     if (!seat) return;
     if (!P.npc.summon(scene, seat.spot)) return;
     setTimeout(() => {

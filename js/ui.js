@@ -533,6 +533,40 @@
   }
 
   /* -------------------------------------------------------------- 任务 --- */
+  /* ------------------------------------------------------------ 回忆 --- */
+  // 每一个两个人待在一起的时候，都会在照片墙上留下一格
+  const MOMENTS = [
+    { key: 'tv', name: '一起看电视', art: 'assets/moment-tv.webp', where: '客厅 · 点沙发', line: '靠垫立起来一半，你的头刚好能靠住。' },
+    { key: 'bath', name: '一起泡澡', art: 'assets/moment-bath.webp', where: '澡堂 · 点浴桶', line: '水汽把镜子糊住了，谁也没先起来。' },
+    { key: 'stars', name: '楼顶看星星', art: 'assets/roof-art.webp', pos: '12% 62%', where: '楼顶 · 点垫子', line: '他数到二十一，你数到十七，谁也没数完。' },
+    { key: 'dinner', name: '一起吃晚饭', art: 'assets/room-birthday-26-optimized.webp', pos: '48% 62%', where: '屋里有鱼有菜时 · 点饭桌', line: '两副碗筷，他把你爱吃的往你那边推。' },
+    { key: 'kiss', name: '一个吻', art: 'assets/moment-kiss.webp', where: '夜里回小屋 · 点床', line: '他耳朵尖红起来，过了好一会儿才说：再来一下。' },
+    { key: 'sleep', name: '一起睡', art: 'assets/moment-sleep.webp', where: '回小屋点床 · 选「和他一起睡」', line: '留了一半被子给他，他躺下的时候肩膀是松的。' }
+  ];
+
+  ui.memories = function memories() {
+    const got = MOMENTS.filter((m) => P.memoryOf && P.memoryOf(m.key)).length;
+    const cards = MOMENTS.map((m) => {
+      const rec = P.memoryOf ? P.memoryOf(m.key) : null;
+      const art = `<img src="${m.art}" alt="" loading="lazy"
+        style="display:block;width:100%;aspect-ratio:3/2;object-fit:cover;object-position:${m.pos || '50% 50%'};
+        image-rendering:auto;border-radius:6px;${rec ? '' : 'filter:grayscale(1) brightness(.22)'}">`;
+      return `<div class="memo ${rec ? '' : 'locked'}">
+        ${art}
+        <b>${rec ? m.name : '还没发生'}</b>
+        <span>${rec ? m.line : `还没解锁 · ${m.where}`}</span>
+        ${rec ? `<em>第 ${rec.day} 天 · 一起 ${rec.times || 1} 次</em>` : '<em>&nbsp;</em>'}
+      </div>`;
+    }).join('');
+    ui.sheet({
+      title: '照片墙',
+      kicker: `${got} / ${MOMENTS.length}`,
+      body: `<p>两个人待在一起的时候，墙上会多一格。现在还空着的那些，去把它填上。</p>
+        <div class="memo-grid">${cards}</div>`,
+      foot: [{ label: '关上灯', run: () => ui.closeSheet() }]
+    });
+  };
+
   ui.record = function record() {
     const list = P.achv.list();
     const done = list.filter((item) => item.done).length;
@@ -748,6 +782,7 @@
           <div class="qitem"><span class="mark">?</span><div><strong>怎么玩</strong><br>点地面走动（键盘 WASD / 方向键）。<br>点菜地：翻土 → 播种 → 浇水 → 等一天。<br>点水面：抛竿，浮标沉下去再点一下。<br>点湖边那张椅子：坐着发呆，能换回一点体力。<br>小屋右下角能去客厅，客厅往里是澡堂，澡堂上楼是楼顶。<br>点床睡觉，进入第二天，作物才会长。</div></div>
           <div class="qitem"><span class="mark">♪</span><div><strong>声音</strong><br>右上角的 ♪ 可以开关音乐和音效。</div></div>
           <div class="qitem" id="menuRecord" role="button" tabindex="0"><span class="mark">★</span><div><strong>这些日子</strong><br>看看已经做成了哪些事。</div></div>
+          <div class="qitem" id="menuMemories" role="button" tabindex="0"><span class="mark">♡</span><div><strong>照片墙</strong><br>两个人待在一起的那些时候，一格一格挂着。</div></div>
         </div>`,
       foot: [
         { label: P.audio.on ? '关掉音乐' : '打开音乐', pale: true, run: () => { P.audio.toggle(); ui.hud(); ui.closeSheet(); } },
@@ -763,6 +798,14 @@
           row.addEventListener('click', open);
           row.addEventListener('keydown', (event) => {
             if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); }
+          });
+        }
+        const memo = wrap.querySelector('#menuMemories');
+        if (memo) {
+          const openWall = () => { ui.closeSheet(); setTimeout(() => ui.memories(), 120); };
+          memo.addEventListener('click', openWall);
+          memo.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openWall(); }
           });
         }
         // 重置存档要按两下，第一下只是把按钮变成「真的重来？」

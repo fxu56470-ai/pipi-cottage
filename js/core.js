@@ -136,6 +136,8 @@
     caught: {},
     grown: {},
     tools: {},
+    // 两个人的瞬间：key -> { day: 第一次是哪天, times: 一共几次 }
+    memories: {},
     stats: { fished: 0, harvested: 0, sold: 0, daysPlayed: 1, cooked: 0 }
   });
 
@@ -169,6 +171,26 @@
   P.wipe = function wipe() {
     try { localStorage.removeItem(P.SAVE_KEY); } catch (_) {}
   };
+
+  /* ------------------------------------------------------------ 回忆 --- */
+  // 每个双人瞬间记一笔。第一次记下来返回 true（用来提示「记到照片墙上了」）
+  P.remember = function remember(key) {
+    const s = P.state;
+    if (!s) return false;
+    if (!s.memories) s.memories = {};
+    const had = s.memories[key];
+    if (had) {
+      had.times = (had.times || 1) + 1;
+      had.last = s.day;
+      P.save();
+      return false;
+    }
+    s.memories[key] = { day: s.day, last: s.day, times: 1 };
+    P.save();
+    return true;
+  };
+
+  P.memoryOf = (key) => (P.state && P.state.memories && P.state.memories[key]) || null;
 
   /* -------------------------------------------------------------- 背包 --- */
   P.bagCount = (id) => (P.state.bag[id] || 0);

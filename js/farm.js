@@ -404,34 +404,31 @@
 
   /* ------------------------------------------------------------ 睡觉 --- */
   A.bed = async function bed() {
-    if (P.world.busy) return;
+    if (P.world.busy || P.ui.modalOpen()) return;
     const spot = { x: 560, y: 700 };
-    const run = async () => {
-      const s = P.state;
-      const late = s.phase >= 2;
-      // 傍晚/夜里睡觉，都能拉上他一起（他不在屋里也会回来）
-      if (late) {
-        const close = (s.hearts || 0) >= 4;
-        await P.ui.say([
-          { who: '旁白', text: P.npc && P.npc.here ? '夜已经深了。他还在屋里，灯还没灭。' : '夜已经深了。他在外头忙，一会儿也该回来了。', choices: [
-            ...(close ? [{ label: '靠过去亲一下', end: true, run: () => { setTimeout(() => A.kiss && A.kiss(), 90); } }] : []),
-            { label: '和他一起睡', end: true, run: () => { setTimeout(() => A.sleepTogether && A.sleepTogether(), 90); } },
-            { label: '自己睡', end: true, run: () => { doSleep(); } }
-          ] }
-        ], { endLabel: '睡吧' });
-        return;
-      }
-      await P.ui.say([
-        { who: '旁白', text: '还早，不过想睡就睡吧。' }
-      ], { endLabel: '睡吧' });
-      await P.sleep();
-    };
     async function doSleep() {
       await P.ui.say([
         { who: '旁白', text: '钻进被子里，很快就不困了。' }
       ], { endLabel: '睡吧' });
       await P.sleep();
     }
+    const run = async () => {
+      const s = P.state;
+      const late = s.phase >= 2;
+      const close = (s.hearts || 0) >= 4;
+      const heard = !!(P.npc && P.npc.here);
+      // 几点都能拉他一起睡：白天躺下就当把这一天提前过完了
+      const lead = late
+        ? (heard ? '夜已经深了。他还在屋里，灯还没灭。' : '夜已经深了。他在外头忙，一会儿也该回来了。')
+        : (heard ? '天还亮着。他就在旁边，被子晒过，闻着有太阳味。' : '被子晒过，蓬蓬的。这会儿躺下，这一天就算过去了。');
+      const choices = [];
+      if (close) {
+        choices.push({ label: '靠过去亲一下', end: true, run: () => { setTimeout(() => A.kiss && A.kiss(), 90); } });
+      }
+      choices.push({ label: late ? '和他一起睡' : '拉他一起躺一会儿', end: true, run: () => { setTimeout(() => A.sleepTogether && A.sleepTogether(), 90); } });
+      choices.push({ label: '自己睡', end: true, run: () => { doSleep(); } });
+      await P.ui.say([{ who: '旁白', text: lead, choices }], { endLabel: '睡吧' });
+    };
     if (U.dist(P.world.pos, spot) > 220) P.world.walkTo(spot.x, spot.y, run);
     else run();
   };
@@ -532,6 +529,12 @@
     }
     const goals = P.daily ? P.daily.summary() : '';
     if (goals) lines.push(`桌上压着一张纸条，是他的字：<br>${goals}`);
+    // 昨晚是一起睡的，早上提一句
+    if (s.flags.sleptWithDay === s.day - 1) {
+      lines.splice(1, 0, s.hearts >= 8
+        ? '他比你起得早，被子往上给你掖了掖，才下床去烧水。'
+        : '他先醒了，坐在床边发了会儿呆，又把被子给你拉好。');
+    }
 
     P.ui.sheet({
       title: `第 ${s.day} 天`, kicker: 'MORNING',

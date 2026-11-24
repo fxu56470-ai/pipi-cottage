@@ -270,6 +270,11 @@
 
   // 竖屏时场景被裁得很窄，沙发、木桶这些热点可能根本不在画面里。
   // 这里把当前场景「能做的事」排成一列小按钮贴在右边，手机上也点得到。
+  // 热点文字会随时段变（床白天是「睡觉」、夜里是「一起睡」），变了要重建
+  world.refreshActions = () => {
+    if (!el.stage) return;
+    buildSceneActions(el.stage.clientHeight > el.stage.clientWidth * 1.1);
+  };
   const ACTION_PRIORITY = ['shop', 'bed', 'tv', 'bath', 'stars', 'fish', 'rest', 'cake', 'gifts', 'shelf', 'gallery'];
   let actionsBar = null;
   function buildSceneActions(portrait) {

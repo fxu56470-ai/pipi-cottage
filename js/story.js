@@ -394,6 +394,7 @@
       <div id="photoShow" hidden style="margin-top:12px;padding:12px;border-radius:12px;background:#f9e2dc"></div>`;
     P.ui.sheet({
       title: '我们的照片墙', kicker: 'PHOTOS', body,
+      foot: [{ label: '两个人那些时候', run: () => { P.ui.closeSheet(); setTimeout(() => P.ui.memories(), 140); } }],
       onMount: (node) => {
         const show = node.querySelector('#photoShow');
         node.querySelectorAll('[data-photo]').forEach((button) => {

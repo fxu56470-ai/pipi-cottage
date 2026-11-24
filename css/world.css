@@ -402,6 +402,16 @@ button { font: inherit; color: inherit; }
   background-repeat: no-repeat;
   background-size: 1536px 1024px;
   mix-blend-mode: normal;
+  /* 裁片的四边要和底图接上，硬边会露出一条缝：
+     用一层渐隐把边缘化开，看起来像被子/水面的软边 */
+  -webkit-mask-image:
+    linear-gradient(180deg, transparent 0, #000 15%, #000 100%),
+    linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(180deg, transparent 0, #000 15%, #000 100%),
+    linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%);
+  mask-composite: intersect;
 }
 
 /* 角色头顶的小气泡（短句，不打断画面） */
@@ -2263,3 +2273,37 @@ button { font: inherit; color: inherit; }
 .sched-row i { font-style: normal; }
 .sched-row.now { color: #a8455f; font-weight: 800; }
 .sched-row.now b, .sched-row.now i { color: #c0566f; }
+
+/* 照片墙 / 回忆册 ------------------------------------------------------- */
+.memo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0 4px;
+}
+.memo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 8px 6px;
+  border-radius: 10px;
+  background: #fff7ec;
+  border: 1px solid #ecd9c2;
+  box-shadow: 0 3px 10px #735d5522;
+}
+.memo b { font-size: 13px; color: #8a5b52; }
+.memo span { font-size: 11px; line-height: 1.5; color: #a08076; }
+.memo em { font-style: normal; font-size: 10px; color: #c0a79c; letter-spacing: .02em; }
+.memo.locked { background: #f7efe4; border-style: dashed; }
+.memo.locked b { color: #b9a49b; }
+
+/* 一起睡：屋里那盏灯慢慢暗下去 ----------------------------------------- */
+.stage[data-duo="sleep"] .scene[data-scene="cottage"] .scene-bg {
+  filter: brightness(.78) saturate(.95);
+  transition: filter 1.1s ease;
+}
+.stage[data-duo="sleep"] .scene[data-scene="cottage"] .scene-bg { transition-delay: .1s; }
+
+@media (max-width: 520px) {
+  .memo-grid { grid-template-columns: 1fr; }
+}

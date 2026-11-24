@@ -110,6 +110,7 @@
       P.audio && P.audio.sfx('water');
       P.npc && P.npc.floatHearts && P.npc.floatHearts();
       P.daily && P.daily.bump('cook');
+      P.remember && P.remember('dinner');
       P.save();
       P.ui.hud();
 
