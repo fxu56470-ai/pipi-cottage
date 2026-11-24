@@ -590,7 +590,18 @@
     // scheduled 的场景要跟着他的日程走
     if (seat.scheduled && P.npc.sceneFor && P.npc.sceneFor(P.state.phase || 0) !== scene) return;
     if (!P.npc.summon(scene, seat.spot)) return;
-    // 用 npc.seat 记住这个姿态：干活的计时器和踱步都不会把它冲掉
-    P.npc.seat(seat.pose, seat.face, seat.hold || '');
+    // 用 npc.seat 记住这个姿态：干活的计时器和踱步都不会把它冲掉。
+    // 万一浏览器拿到的是新旧混着的缓存（npc.js 还是旧的），退回老写法，别整段炸掉
+    if (P.npc.seat) {
+      P.npc.seat(seat.pose, seat.face, seat.hold || '');
+    } else {
+      setTimeout(() => {
+        const el = P.npc && P.npc.el;
+        if (!el) return;
+        P.npc.faceMode = seat.face;
+        el.dataset.pose = seat.pose;
+        el.dataset.hold = '';
+      }, 420);
+    }
   }
 })();
