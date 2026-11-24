@@ -21,6 +21,12 @@
       when: () => P.state.phase >= 2
     },
     { id: 'sell', text: '卖 1 样东西', n: 1, kinds: ['sell'], coins: 22 },
+    {
+      id: 'craft', text: '在工作台上做 1 份东西', n: 1, kinds: ['craft'], coins: 32,
+      // 手上没有原料就别派这个活，做了也是白等
+      when: () => ['milk', 'wool', 'egg', 'strawberry'].some((id) => P.bagCount && P.bagCount(id) > 0)
+        || (P.state.animals || []).some(Boolean)
+    },
     { id: 'gift', text: '送他一样东西', n: 1, kinds: ['gift'], coins: 34 },
     {
       id: 'cook', text: '和他一起吃顿饭', n: 1, kinds: ['cook'], coins: 40,

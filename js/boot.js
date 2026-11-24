@@ -22,6 +22,7 @@
     P.garden && P.garden.init && P.garden.init();
     P.pasture && P.pasture.init && P.pasture.init();
     P.town && P.town.init && P.town.init();
+    P.craft && P.craft.init && P.craft.init();
     P.fishingInit && P.fishingInit();
     P.npc.init();
     P.story.init();

@@ -315,7 +315,7 @@
     if (!el.stage) return;
     buildSceneActions(el.stage.clientHeight > el.stage.clientWidth * 1.1);
   };
-  const ACTION_PRIORITY = ['shop', 'market', 'bakery', 'store', 'junk', 'cafe', 'well', 'gardenPlot', 'animal', 'trough', 'car', 'towel', 'bed', 'tv', 'bath', 'stars', 'fishTogether', 'fish', 'rest', 'cake', 'gifts', 'shelf', 'gallery'];
+  const ACTION_PRIORITY = ['shop', 'market', 'bakery', 'store', 'junk', 'bench', 'cafe', 'well', 'gardenPlot', 'animal', 'trough', 'car', 'towel', 'bed', 'tv', 'bath', 'stars', 'fishTogether', 'fish', 'rest', 'cake', 'gifts', 'shelf', 'gallery'];
   let actionsBar = null;
   function buildSceneActions(portrait) {
     if (!actionsBar) {

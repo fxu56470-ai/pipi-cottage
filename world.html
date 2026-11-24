@@ -84,7 +84,9 @@
       <!-- ---------------------------------------------------------- 牧场 -->
       <section class="scene" data-scene="pasture">
         <img class="scene-bg" src="assets/pasture-art.webp" alt="傍晚的牧场：木栅栏围起一片草地，左边是谷仓和干草堆，中间有一个水槽" draggable="false">
+        <img class="bench-prop" src="assets/prop-bench.png" alt="" draggable="false" aria-hidden="true">
         <div class="pasture-animals" id="pastureAnimals" aria-hidden="true"></div>
+        <button class="spot spot-bench" data-action="bench" style="left:236px;top:448px;width:130px;height:110px" aria-label="工作台"><span class="spot-label">工作台</span></button>
         <button class="spot" data-action="trough" style="left:915px;top:425px;width:105px;height:80px" aria-label="水槽"><span class="spot-label">喂一遍</span></button>
         <button class="spot" data-action="pasture" style="left:906px;top:760px;width:176px;height:92px" aria-label="牧场里的动物"><span class="spot-label">牧场</span></button>
         <button class="spot" data-action="look" data-text="干草堆被压出一个窝，大概是谁中午在这儿睡过。" style="left:58px;top:364px;width:168px;height:120px" aria-label="看看干草堆"><span class="spot-label">看看</span></button>
@@ -222,6 +224,7 @@
 <script src="js/dinner.js"></script>
 <script src="js/moments.js"></script>
 <script src="js/town.js"></script>
+<script src="js/craft.js"></script>
 <script src="js/boot.js"></script>
 <script src="js/pwa.js"></script>
 </body>

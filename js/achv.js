@@ -274,6 +274,27 @@
       note: '在旧货摊上买过 3 样东西',
       test: () => (S().stats.junk || 0) >= 3,
       progress: () => [Math.min(S().stats.junk || 0, 3), 3]
+    },
+    {
+      id: 'firstCraft',
+      name: '第一次动手',
+      note: '在工作台上做出第一份东西',
+      test: () => (S().stats.crafts || 0) >= 1,
+      progress: () => [Math.min(S().stats.crafts || 0, 1), 1]
+    },
+    {
+      id: 'allRecipes',
+      name: '四样都会',
+      note: '奶酪、果酱、毛线、蛋黄酱，四样都做过',
+      test: () => P.RECIPE_ORDER.filter((key) => (S().recipes[key] || 0) > 0).length >= 4,
+      progress: () => [P.RECIPE_ORDER.filter((key) => (S().recipes[key] || 0) > 0).length, 4]
+    },
+    {
+      id: 'craftTen',
+      name: '手熟了',
+      note: '在工作台上做过 10 份东西',
+      test: () => (S().stats.crafts || 0) >= 10,
+      progress: () => [Math.min(S().stats.crafts || 0, 10), 10]
     }
   ];
 

@@ -2701,3 +2701,35 @@ button { font: inherit; color: inherit; }
 @keyframes glass-breathe {
   50% { opacity: .62; }
 }
+
+/* 谷仓门口的工作台：底图上没有，是贴上去的一小张长桌 -------------------- */
+.bench-prop {
+  position: absolute;
+  left: 246px;
+  top: 474px;
+  width: 106px;
+  height: auto;
+  z-index: 24;
+  image-rendering: pixelated;
+  pointer-events: none;
+  filter: drop-shadow(0 7px 10px #2a1a1a4d);
+}
+.spot-bench { z-index: 26; }
+/* 有材料可做的时候，台面上浮一层很淡的暖光，慢慢呼吸 */
+.scene[data-scene="pasture"].bench-ready .bench-prop {
+  filter: drop-shadow(0 0 12px #ffd98a6b);
+  animation: bench-glow 4.6s ease-in-out infinite;
+}
+@keyframes bench-glow {
+  0%, 100% { filter: drop-shadow(0 0 5px #ffd98a33); }
+  50% { filter: drop-shadow(0 0 15px #ffd98a88); }
+}
+/* 有材料可做的时候，台面上浮一层很淡的暖光，慢慢呼吸 */
+.scene[data-scene="pasture"].bench-ready .bench-prop {
+  filter: drop-shadow(0 0 12px #ffd98a6b);
+  animation: bench-glow 4.6s ease-in-out infinite;
+}
+@keyframes bench-glow {
+  0%, 100% { filter: drop-shadow(0 0 5px #ffd98a33); }
+  50% { filter: drop-shadow(0 0 15px #ffd98a88); }
+}

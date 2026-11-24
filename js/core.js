@@ -90,6 +90,16 @@
     wool: { name: '羊毛', kind: 'goods', price: 120, icon: 'item-wool', desc: '一团很软的羊毛，闻着有点太阳味。' },
     milk: { name: '牛奶', kind: 'goods', price: 76, icon: 'item-milk', desc: '瓶壁上挂着一层薄薄的奶皮。' },
 
+    // 工作台上做出来的：hand 记着「这是自己做的」，能送他
+    cheese: { name: '一块奶酪', kind: 'goods', price: 208, icon: 'item-cheese', hand: 'cheese',
+      desc: '两瓶牛奶压成一块。切一片放在面包上，他能多吃两片。' },
+    yarn: { name: '一团毛线', kind: 'goods', price: 178, icon: 'item-yarn',
+      desc: '搓得很匀，绕成一个球。镇上的人抢着要。' },
+    mayo: { name: '一罐蛋黄酱', kind: 'goods', price: 98, icon: 'item-mayo',
+      desc: '两个蛋打散，油一滴一滴下去，手不能停。' },
+    jam: { name: '一瓶草莓酱', kind: 'goods', price: 320, icon: 'item-jam', hand: 'jam',
+      desc: '三颗草莓熬成一小瓶，颜色深得像傍晚。' },
+
     // 镇上买的小东西
     bouquet: { name: '一束花', kind: 'gift', price: 45, icon: 'item-bouquet', desc: '镇上花摊扎的，用旧报纸包着。' },
 
@@ -185,6 +195,36 @@
   // 牧场现在能站几只
   P.pastureCap = () => (P.hasUp('fence') ? P.PASTURE_MAX : P.PASTURE_SLOTS);
 
+  /* ------------------------------------------------------------ 加工 --- */
+  // 谷仓门口那张工作台：牧场和菜园的收成，在这儿能做成更值钱的东西。
+  // from 里的数量会被吃掉，做出来的就是同名 id 的 ITEM。
+  P.RECIPE = {
+    cheese: {
+      name: '奶酪', from: { milk: 2 }, energy: 1,
+      note: '两瓶牛奶压成一块，放得住，也卖得上价。',
+      line: '牛奶倒进锅里，小火，木勺一直划。慢慢就稠了。'
+    },
+    jam: {
+      name: '草莓酱', from: { strawberry: 3 }, energy: 1,
+      note: '三颗草莓熬成一小瓶，熬的时候满屋子都是甜的。',
+      line: '草莓压碎，加糖，熬到勺子提起来挂得住。'
+    },
+    yarn: {
+      name: '毛线', from: { wool: 1 }, energy: 1,
+      note: '一团羊毛搓成线，绕成球的时候最费时间。',
+      line: '羊毛梳开，一缕一缕捻起来，捻着捻着就细了。'
+    },
+    mayo: {
+      name: '蛋黄酱', from: { egg: 2 }, energy: 1,
+      note: '两个蛋打散，油一滴一滴往下滴，手不能停。',
+      line: '蛋打到发白，油一小勺一小勺加，加急了就散。'
+    }
+  };
+  P.RECIPE_ORDER = ['cheese', 'jam', 'yarn', 'mayo'];
+  // 做够 10 份就算手熟：以后不费力气
+  P.CRAFT_FREE_AT = 10;
+  P.craftCost = (base = 1) => ((P.state && (P.state.stats.crafts || 0) >= P.CRAFT_FREE_AT) ? 0 : base);
+
 
   P.icon = (name) => `assets/${name}.png`;
   P.itemIcon = (id) => {
@@ -235,9 +275,11 @@
     caught: {},
     grown: {},
     tools: {},
+    // 加工台做过什么：key -> 份数（成就和「四样都做过」都看这个）
+    recipes: {},
     // 两个人的瞬间：key -> { day: 第一次是哪天, times: 一共几次 }
     memories: {},
-    stats: { fished: 0, harvested: 0, sold: 0, daysPlayed: 1, cooked: 0, milked: 0, eggs: 0 }
+    stats: { fished: 0, harvested: 0, sold: 0, daysPlayed: 1, cooked: 0, milked: 0, eggs: 0, crafts: 0 }
   });
 
   P.state = null;

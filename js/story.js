@@ -344,6 +344,23 @@
 
   story.giftLines = function giftLines(item) {
     const hearts = S().hearts;
+    // 工作台上做的东西：他会先问「你做的？」
+    if (item.hand === 'cheese') {
+      return [
+        { who: '闷葫芦', text: '你做的？' },
+        { who: '旁白', text: '他捏了捏边角，又凑近闻了一下。' },
+        { who: '闷葫芦', text: '……有奶味，还有一点点锅气。' },
+        { who: '闷葫芦', text: hearts >= 6 ? '明天早上切两片，一人一片。' : '我留着慢慢吃。' }
+      ];
+    }
+    if (item.hand === 'jam') {
+      return [
+        { who: '闷葫芦', text: '这个颜色……熬了很久吧。' },
+        { who: '旁白', text: '他把瓶子举到窗边，里面的红透过来，落在手背上。' },
+        { who: '闷葫芦', text: '草莓是你种的。' },
+        { who: '闷葫芦', text: '那这瓶得省着吃。' }
+      ];
+    }
     // 旧货摊淘来的三样东西，他会认真看一会儿
     if (item.trinket === 'key') {
       return [
