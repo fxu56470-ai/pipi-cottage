@@ -39,7 +39,11 @@
     strawberry: { name: '草莓', days: 4, sell: 78, seed: 'seed_strawberry', icon: 'item-strawberry', tone: '#e2574e', rarity: 'uncommon',
       note: '甜得有点犯规，闻着就开心。' },
     sunflower: { name: '向日葵', days: 5, sell: 130, seed: 'seed_sunflower', icon: 'item-sunflower', tone: '#f7c948', rarity: 'rare',
-      note: '长得比人还高，会一直朝着太阳转。' }
+      note: '长得比人还高，会一直朝着太阳转。' },
+    corn: { name: '玉米', days: 6, sell: 210, seed: 'seed_corn', icon: 'item-corn', tone: '#f0c85a', rarity: 'uncommon',
+      note: '剥开外皮的时候，粒是排得整整齐齐的。' },
+    pumpkin: { name: '南瓜', days: 8, sell: 360, seed: 'seed_pumpkin', icon: 'item-pumpkin', tone: '#e98a3e', rarity: 'rare',
+      note: '重得要用两只手抱。放在窗台上，一整个秋天都很暖。' }
   };
 
   // weather 是可选的：写了就只有这个天气才咬钩
@@ -72,7 +76,22 @@
     seed_wheat: { name: '小麦种子', kind: 'seed', crop: 'wheat', price: 10, icon: 'seed-wheat', desc: '2 天成熟，卖 26 金币。' },
     seed_carrot: { name: '胡萝卜种子', kind: 'seed', crop: 'carrot', price: 16, icon: 'seed-carrot', desc: '3 天成熟，卖 44 金币。' },
     seed_strawberry: { name: '草莓种子', kind: 'seed', crop: 'strawberry', price: 30, icon: 'seed-strawberry', desc: '4 天成熟，卖 78 金币。' },
-    seed_sunflower: { name: '向日葵种子', kind: 'seed', crop: 'sunflower', price: 48, icon: 'seed-sunflower', desc: '5 天成熟，卖 130 金币。' }
+    seed_sunflower: { name: '向日葵种子', kind: 'seed', crop: 'sunflower', price: 48, icon: 'seed-sunflower', desc: '5 天成熟，卖 130 金币。' },
+    // 玉米和南瓜只在镇上买得到
+    seed_corn: { name: '玉米种子', kind: 'seed', crop: 'corn', price: 62, icon: 'seed-corn', desc: '6 天成熟，卖 210 金币。镇上才有卖。' },
+    seed_pumpkin: { name: '南瓜种子', kind: 'seed', crop: 'pumpkin', price: 96, icon: 'seed-pumpkin', desc: '8 天成熟，卖 360 金币。镇上才有卖。' },
+
+    // 牧场和菜园用的消耗品
+    feed: { name: '饲料', kind: 'supply', price: 6, icon: 'item-feed', desc: '一袋够喂一只。早上喂过，第二天才有收获。' },
+    fertilizer: { name: '肥料', kind: 'supply', price: 20, icon: 'item-fertilizer', desc: '撒在一格上，那一格立刻多长一天。' },
+
+    // 牧场产出
+    egg: { name: '鸡蛋', kind: 'goods', price: 34, icon: 'item-egg', desc: '还温着，摸起来比看上去重一点。' },
+    wool: { name: '羊毛', kind: 'goods', price: 120, icon: 'item-wool', desc: '一团很软的羊毛，闻着有点太阳味。' },
+    milk: { name: '牛奶', kind: 'goods', price: 76, icon: 'item-milk', desc: '瓶壁上挂着一层薄薄的奶皮。' },
+
+    // 镇上买的小东西
+    bouquet: { name: '一束花', kind: 'gift', price: 45, icon: 'item-bouquet', desc: '镇上花摊扎的，用旧报纸包着。' }
   };
   Object.entries(P.CROP).forEach(([id, crop]) => {
     P.ITEM[id] = { name: crop.name, kind: 'crop', crop: id, price: crop.sell, icon: crop.icon, desc: crop.note };
@@ -104,6 +123,36 @@
   };
   P.hasTool = (id) => Boolean(P.state && P.state.tools && P.state.tools[id]);
 
+  /* -------------------------------------------------------------- 牧场 --- */
+  // 每只动物占牧场一个位置。喂一次，第二天才产东西；羊两天才剪一次毛。
+  P.ANIMAL = {
+    chicken: {
+      name: '母鸡', price: 260, icon: 'animal-chicken', product: 'egg', every: 1,
+      sound: '咯咯', note: '一早就开始在草地上刨，刨出什么都要研究半天。',
+      line: { hungry: '它歪着头看你，脚边什么都没有。', ok: '它蹲下来了，看样子是准备下蛋。' }
+    },
+    sheep: {
+      name: '绵羊', price: 620, icon: 'animal-sheep', product: 'wool', every: 2,
+      sound: '咩', note: '毛厚得看不见眼睛，走起来像一团会动的云。',
+      line: { hungry: '它凑过来闻你的手，没闻到吃的，又慢慢走开。', ok: '它安静地嚼着草，毛已经长到能剪了。' }
+    },
+    cow: {
+      name: '奶牛', price: 1100, icon: 'animal-cow', product: 'milk', every: 1,
+      sound: '哞', note: '每天都很准时地站在水槽边上等你。',
+      line: { hungry: '它把头低下来顶了顶你的肩，像是在催。', ok: '它站得很稳，奶桶在它脚边等着。' }
+    }
+  };
+  P.ANIMAL_ORDER = ['chicken', 'sheep', 'cow'];
+  P.PASTURE_SLOTS = 6;
+
+  // 牧场里的位置（美术像素），前排放得靠下一点，看着有纵深
+  // 六个位置在围栏里分成前后两排，靠下的放大一点，看着有纵深
+  P.PASTURE_SPOTS = [
+    { x: 560, y: 590 }, { x: 680, y: 615 }, { x: 790, y: 645 },
+    { x: 470, y: 700 }, { x: 590, y: 735 }, { x: 700, y: 752 }
+  ];
+
+
   P.icon = (name) => `assets/${name}.png`;
   P.itemIcon = (id) => {
     const item = P.ITEM[id];
@@ -112,6 +161,15 @@
 
   /* -------------------------------------------------------------- 状态 --- */
   P.PLOTS = 12;
+  P.GARDEN_PLOTS = 20;
+  // 菜园分三档开：先两排，掏钱清一次杂草多一排，第三次连洒水器一起装上
+  P.GARDEN_TIERS = [
+    { rows: 2, label: '两排已经能种了', price: 0 },
+    { rows: 3, label: '清掉一垄杂草，再多一排', price: 220 },
+    { rows: 4, label: '整块地都开着，还配了洒水器', price: 480 }
+  ];
+
+  const emptyPlot = () => ({ tilled: false, seed: null, days: 0, watered: false });
 
   P.newState = () => ({
     version: 1,
@@ -125,20 +183,24 @@
     weather: 'sun',
     pos: { x: 610, y: 858 },
     bag: { seed_wheat: 4 },
-    plots: Array.from({ length: P.PLOTS }, () => ({ tilled: false, seed: null, days: 0, watered: false })),
+    plots: Array.from({ length: P.PLOTS }, emptyPlot),
+    garden: Array.from({ length: P.GARDEN_PLOTS }, emptyPlot),
+    animals: Array.from({ length: P.PASTURE_SLOTS }, () => null),
     hearts: 0,
     quest: 'wake',
     flags: {
       intro: false, gifts: {}, candles: false, ending: false, dinner: false,
       metBoy: false, caughtAny: false, slept: false, finished: false,
-      recentEvents: [], dexPaid: 0, goalsDay: 0, goals: [], goalsPaid: 0
+      recentEvents: [], dexPaid: 0, goalsDay: 0, goals: [], goalsPaid: 0,
+      gardenLv: 0, gardenTold: false, townTrips: 0, truckTold: false,
+      cafeDay: 0, fedDay: 0
     },
     caught: {},
     grown: {},
     tools: {},
     // 两个人的瞬间：key -> { day: 第一次是哪天, times: 一共几次 }
     memories: {},
-    stats: { fished: 0, harvested: 0, sold: 0, daysPlayed: 1, cooked: 0 }
+    stats: { fished: 0, harvested: 0, sold: 0, daysPlayed: 1, cooked: 0, milked: 0, eggs: 0 }
   });
 
   P.state = null;
@@ -163,6 +225,12 @@
         plots: (data.plots || base.plots).slice(0, P.PLOTS).concat(
           base.plots.slice((data.plots || []).length)
         ),
+        // 菜园和牧场是后加的：老存档里没有这两段，补齐成初始值
+        garden: Array.from({ length: P.GARDEN_PLOTS }, (_, i) => {
+          const plot = (data.garden || [])[i];
+          return plot && typeof plot === 'object' ? { ...emptyPlot(), ...plot } : emptyPlot();
+        }),
+        animals: Array.from({ length: P.PASTURE_SLOTS }, (_, i) => (data.animals || [])[i] || null),
         stats: { ...base.stats, ...(data.stats || {}) }
       };
     } catch (_) { return null; }

@@ -89,6 +89,46 @@
       spawn: { x: 760, y: 940 },
       npc: { x: 1010, y: 910 },
       npcRow: 0
+    },
+    garden: {
+      label: '菜园',
+      // 屋后那块地：中间是翻好的土垄，人走垄上，也能绕到围栏外那条路
+      walk: [[[648, 302], [936, 392], [930, 580], [1210, 760], [980, 970],
+        [560, 978], [318, 848], [330, 600]]],
+      solids: [
+        { x1: 660, x2: 886, y1: 186, y2: 392 },     // 温室
+        { x1: 86, x2: 330, y1: 226, y2: 376 },      // 堆肥箱、雨桶、水壶
+        { x1: 414, x2: 486, y1: 158, y2: 300 }      // 稻草人
+      ],
+      depth: { y0: 560, y1: 978, min: 0.80, max: 1.02 },
+      spawn: { x: 700, y: 862 },
+      npc: { x: 968, y: 872 },
+      npcRow: 2
+    },
+    pasture: {
+      label: '牧场',
+      walk: [[[648, 404], [944, 508], [930, 720], [780, 908], [600, 940],
+        [380, 884], [330, 716], [352, 636]]],
+      solids: [
+        { x1: 628, x2: 748, y1: 386, y2: 482 }      // 水槽
+      ],
+      depth: { y0: 560, y1: 940, min: 0.80, max: 1.02 },
+      spawn: { x: 760, y: 872 },
+      npc: { x: 862, y: 706 },
+      npcRow: 2
+    },
+    town: {
+      label: '镇上',
+      // 石板广场的下半截：摊位和井都在上边，人不往那边挤
+      walk: [[[352, 706], [962, 664], [1024, 874], [700, 972], [378, 936]]],
+      solids: [
+        { x1: 470, x2: 606, y1: 526, y2: 706 },     // 水井
+        { x1: 240, x2: 470, y1: 486, y2: 640 }      // 露天咖啡座
+      ],
+      depth: { y0: 664, y1: 972, min: 0.80, max: 1.02 },
+      spawn: { x: 700, y: 856 },
+      npc: { x: 880, y: 776 },
+      npcRow: 2
     }
   };
   P.SCENES = SCENES;
@@ -275,7 +315,7 @@
     if (!el.stage) return;
     buildSceneActions(el.stage.clientHeight > el.stage.clientWidth * 1.1);
   };
-  const ACTION_PRIORITY = ['shop', 'towel', 'bed', 'tv', 'bath', 'stars', 'fishTogether', 'fish', 'rest', 'cake', 'gifts', 'shelf', 'gallery'];
+  const ACTION_PRIORITY = ['shop', 'gardenPlot', 'animal', 'market', 'car', 'towel', 'bed', 'tv', 'bath', 'stars', 'fishTogether', 'fish', 'rest', 'cake', 'gifts', 'shelf', 'gallery'];
   let actionsBar = null;
   function buildSceneActions(portrait) {
     if (!actionsBar) {
@@ -317,11 +357,30 @@
   // 竖屏时把出口按钮挪到 stage 层级、绝对定位贴屏幕左右下角（方向键上方），横屏还原。
   function layoutPortraitExits(portrait) {
     const scene = document.querySelector('.scene.active');
+    // 上一幕挪到 stage 上的出口不会自己回去，会一直贴在屏幕角上挡住新场景——
+    // 每次换场先把它塞回各自的场景。
+    [...el.stage.querySelectorAll(':scope > .exit')].forEach((btn) => {
+      if (btn.parentElement === scene) return;
+      const home = btn.dataset.homeScene
+        ? document.querySelector(`.scene[data-scene="${btn.dataset.homeScene}"]`)
+        : null;
+      btn.classList.remove('exit-fixed', 'exit-grid');
+      btn.style.width = '';
+      if (btn.dataset.origLeft) { btn.style.left = btn.dataset.origLeft; delete btn.dataset.origLeft; }
+      if (btn.dataset.origTop) { btn.style.top = btn.dataset.origTop; delete btn.dataset.origTop; }
+      (home || scene || el.stage).appendChild(btn);
+    });
     const exits = scene ? [...scene.querySelectorAll('.exit')] : [];
+    // 农场现在通往四个地方（湖边/菜园/牧场/镇上）+ 回小屋，一列竖排会占掉半个屏幕，
+    // 出口超过 3 个时改成两列小胶囊，从底部往上排。
+    const cols = exits.length > 3 ? 2 : 1;
+    const gapY = cols > 1 ? 46 : 54;
+    const colW = 118;
     exits.forEach((btn, i) => {
       if (!portrait) {
         // 横屏：放回场景，恢复原始坐标
-        btn.classList.remove('exit-fixed');
+        btn.classList.remove('exit-fixed', 'exit-grid');
+        btn.style.width = '';
         if (btn.dataset.origLeft) { btn.style.left = btn.dataset.origLeft; delete btn.dataset.origLeft; }
         if (btn.dataset.origTop) { btn.style.top = btn.dataset.origTop; delete btn.dataset.origTop; }
         btn.style.right = ''; btn.style.bottom = '';
@@ -333,13 +392,18 @@
         btn.dataset.origTop = btn.style.top;
         btn.dataset.origParent = '';
       }
-      // 移到 stage（无 transform 的定位上下文），绝对定位到屏幕左下角竖排
+      if (!btn.dataset.homeScene) btn.dataset.homeScene = scene.dataset.scene || '';
+      // 移到 stage（无 transform 的定位上下文），绝对定位到屏幕左下角
       if (btn.parentElement !== el.stage) el.stage.appendChild(btn);
       btn.classList.add('exit-fixed');
-      btn.style.left = '12px';
+      btn.classList.toggle('exit-grid', cols > 1);
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      btn.style.left = `${10 + col * (colW + 6)}px`;
+      btn.style.width = cols > 1 ? `${colW}px` : '';
       btn.style.right = 'auto';
       btn.style.top = 'auto';
-      btn.style.bottom = `${12 + i * 60}px`;
+      btn.style.bottom = `${12 + row * gapY}px`;
     });
   }
 
@@ -704,7 +768,10 @@
     P.save();
     if (!opts.quiet) sceneWipe();
     if (from && from.label) {
-      const names = { cottage: '小屋', farm: '农场', lake: '湖边', tvroom: '客厅', bath: '澡堂', roof: '楼顶' };
+      const names = {
+        cottage: '小屋', farm: '农场', lake: '湖边', tvroom: '客厅',
+        bath: '澡堂', roof: '楼顶', garden: '菜园', pasture: '牧场', town: '镇上'
+      };
       if (!opts.quiet) showHint(`来到${names[sceneKey]}`);
     }
     P.ui && P.ui.task();
@@ -812,6 +879,14 @@
 
     document.querySelectorAll('.exit').forEach((button) => {
       button.addEventListener('click', () => {
+        // 有些「出口」其实要演一段（比如开车），那种走 actions
+        if (button.dataset.action) {
+          P.audio && P.audio.start();
+          P.audio && P.audio.sfx('click');
+          const act = P.actions && P.actions[button.dataset.action];
+          if (act) act(button);
+          return;
+        }
         // 楼顶这种只有晚上才对的地方，白天点上去给句提示就好
         const need = Number(button.dataset.needPhase);
         if (need && P.state.phase < need) {

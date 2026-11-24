@@ -453,6 +453,9 @@
       if (plot.seed && plot.watered) plot.days += 1;
       plot.watered = false;
     });
+    // 后院菜园和牧场也在过夜：菜园有洒水器就自动浇，动物喂过的才产东西
+    const gardenGrew = P.garden && P.garden.night ? P.garden.night() : 0;
+    const herd = P.pasture && P.pasture.night ? P.pasture.night() : null;
     s.day += 1;
     s.stats.daysPlayed = s.day;
     s.phase = 0;
@@ -479,7 +482,7 @@
     P.story && P.story.check('sleep');
     P.world.go(P.world.current, { quiet: true, at: P.SCENES.cottage.spawn });
     P.story && P.story.onMorning && P.story.onMorning();
-    await morningCard(s, before);
+    await morningCard(s, before, { gardenGrew, herd });
     if (P.dailyEvent) await P.dailyEvent();
   };
 
@@ -503,7 +506,7 @@
   };
 
   // 每天起床第一件事：看一眼昨天干了什么。等玩家点「起床」再继续。
-  function morningCard(s, before) {
+  function morningCard(s, before, extra) {
     const harvest = (s.stats.harvested || 0) - before.harvested;
     const fish = (s.stats.fished || 0) - before.fished;
     const coins = s.coins - before.coins;
@@ -526,6 +529,16 @@
       const kind = P.weather.get();
       const pool = WEATHER_LINE[kind] || WEATHER_LINE.sun;
       lines.push(`${P.weather.info().mark} ${pool[Math.floor(Math.random() * pool.length)]}`);
+    }
+    // 菜园和牧场：昨天有没有动静，一句话说清
+    if (extra && extra.gardenGrew) {
+      lines.push(`屋后菜园里 ${extra.gardenGrew} 格长了一天。`);
+    }
+    if (extra && extra.herd) {
+      const bits2 = [];
+      if (extra.herd.produced) bits2.push(`${extra.herd.produced} 份可以收了`);
+      if (extra.herd.hungry) bits2.push(`${extra.herd.hungry} 只没喂上`);
+      if (bits2.length) lines.push(`牧场那边：${bits2.join('，')}。`);
     }
     const goals = P.daily ? P.daily.summary() : '';
     if (goals) lines.push(`桌上压着一张纸条，是他的字：<br>${goals}`);

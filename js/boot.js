@@ -19,6 +19,9 @@
     P.ui.init();
     P.world.init();
     P.farm.init();
+    P.garden && P.garden.init && P.garden.init();
+    P.pasture && P.pasture.init && P.pasture.init();
+    P.town && P.town.init && P.town.init();
     P.fishingInit && P.fishingInit();
     P.npc.init();
     P.story.init();
@@ -27,6 +30,7 @@
     P.applyPhase();
     P.ui.hud();
     P.farm.paint();
+    P.garden && P.garden.paint && P.garden.paint();
     P.ui.task();
 
     if (fresh && !fromFoyer) setTimeout(intro, 420);

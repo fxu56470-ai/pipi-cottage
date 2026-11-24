@@ -233,6 +233,15 @@ button { font: inherit; color: inherit; }
   font-size: 14px;
   padding: 9px 14px;
 }
+/* 出口多的场景（农场）竖屏排成两列，字号和内边距缩一点才塞得下 */
+.exit.exit-fixed.exit-grid {
+  justify-content: center;
+  font-size: 12.5px;
+  padding: 8px 6px;
+  gap: 4px;
+  letter-spacing: -.2px;
+  white-space: nowrap;
+}
 
 /* 竖屏右侧的「可做的事」：场景裁窄了，热点可能不在画面里 */
 .scene-actions {
@@ -2401,4 +2410,236 @@ button { font: inherit; color: inherit; }
 .stage[data-duo="fish"] .scene[data-scene="lake"] .water-shine {
   opacity: .95;
   animation-duration: 3.4s;
+}
+
+/* ======================================================================
+   屋后菜园 / 牧场 / 镇上  —— 第十三轮加的三块地方
+   ====================================================================== */
+
+/* 菜园:土是背景图里就翻好的,这里只叠湿润和荒草 ---------------------------- */
+.plot-zone.backyard-wet::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 46%, #3a24182e, #2010095c);
+  box-shadow: inset 0 0 22px #1d100a99;
+}
+.plot.locked { cursor: pointer; }
+.plot.locked + .plot-zone {
+  background: repeating-linear-gradient(46deg, #6f94506e 0 9px, #5d7f446e 9px 18px);
+  box-shadow: inset 0 0 0 2px #3d57324d;
+}
+.plot.locked + .plot-zone .hover { background: #ffe9a8; }
+.plot.locked:hover + .plot-zone .hover { opacity: .2; }
+
+/* 牧场里的动物 ---------------------------------------------------------- */
+.pasture-animals { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
+.animal {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform .9s ease;
+}
+.animal-shadow {
+  position: absolute;
+  left: 0;
+  /* 再往下挪一点，不然整块影子都被动物压在下面看不见 */
+  bottom: -13px;
+  width: 64px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 50%, #241a12ad, #241a1200 68%);
+  transform: translate(-50%, 0) scale(var(--depth, 1));
+}
+.animal-art {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  image-rendering: pixelated;
+  transform: translate(-50%, 0) scale(var(--depth, 1));
+  transform-origin: 50% 100%;
+  filter: drop-shadow(0 5px 3px #3a2a2344);
+  animation: animal-breathe 3.4s ease-in-out infinite;
+}
+@keyframes animal-breathe {
+  50% { transform: translate(-50%, -2px) scale(var(--depth, 1)) scaleY(1.03); }
+}
+.animal.peck .animal-art {
+  animation: animal-peck .9s ease-in-out;
+}
+@keyframes animal-peck {
+  0%, 100% { transform: translate(-50%, 0) scale(var(--depth, 1)); }
+  38% { transform: translate(-50%, 5px) scale(var(--depth, 1)) rotate(4deg); }
+  70% { transform: translate(-50%, -3px) scale(var(--depth, 1)); }
+}
+.animal.hungry .animal-art { filter: grayscale(.35) brightness(.92) drop-shadow(0 5px 3px #3a2a2344); }
+.animal-mark {
+  position: absolute;
+  left: 0;
+  z-index: 3;
+  top: -100px;
+  transform: translate(-50%, 0);
+  animation: animal-mark-bob 1.7s ease-in-out infinite;
+}
+.animal-mark img {
+  width: 34px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 3px 4px #2a1a1277);
+}
+@keyframes animal-mark-bob {
+  50% { transform: translate(-50%, -7px); }
+}
+
+/* 开车去镇上：一段黑场过场 ---------------------------------------------- */
+.drive {
+  position: absolute;
+  inset: 0;
+  z-index: 240;
+  overflow: hidden;
+  background: #1b131b;
+  transition: opacity .5s ease;
+}
+.drive.out { opacity: 0; }
+.drive-sky {
+  position: absolute;
+  inset: 0 0 46% 0;
+  background: linear-gradient(#241a2a 0%, #40293c 55%, #6d4746 100%);
+}
+/* 天上撒一把星，远处压两层山影，不然这段过场就是一块空黑 */
+.drive-sky::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1.6px 1.6px at 8% 18%, #ffe9c8cc 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 22% 32%, #ffe9c899 50%, transparent 51%),
+    radial-gradient(1.8px 1.8px at 35% 12%, #fff2d8cc 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 48% 26%, #ffe9c877 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 62% 9%, #ffe9c899 50%, transparent 51%),
+    radial-gradient(1.3px 1.3px at 74% 22%, #ffe9c877 50%, transparent 51%),
+    radial-gradient(1.8px 1.8px at 88% 14%, #fff2d8cc 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 94% 34%, #ffe9c866 50%, transparent 51%);
+}
+.drive-sky::after {
+  content: '';
+  position: absolute;
+  left: 10%;
+  bottom: 12%;
+  width: 26%;
+  height: 24%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 55%, #ffdca44d, #ffdca400 70%);
+}
+/* 远山：两排圆顶剪影，压在路上方 */
+.drive-hills {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 44%;
+  height: 16%;
+  z-index: 2;
+  background:
+    radial-gradient(52% 100% at 12% 108%, #2e2130 0 62%, transparent 63%),
+    radial-gradient(44% 86% at 34% 108%, #352637 0 62%, transparent 63%),
+    radial-gradient(56% 112% at 58% 108%, #2b1f2e 0 62%, transparent 63%),
+    radial-gradient(40% 78% at 82% 108%, #332433 0 62%, transparent 63%),
+    radial-gradient(48% 96% at 98% 108%, #2b1f2e 0 62%, transparent 63%);
+}
+/* 路边的灯柱一路往后跑，给一点速度感 */
+.drive-lamp {
+  position: absolute;
+  bottom: 22%;
+  width: 4px;
+  height: 62px;
+  background: #1b1420;
+  border-radius: 2px;
+  z-index: 3;
+  animation: drive-lamp 1.9s linear infinite;
+}
+.drive-lamp::after {
+  content: '';
+  position: absolute;
+  left: -9px;
+  top: -2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffd08a99 0 30%, #ffd08a00 70%);
+}
+.drive-lamp.a { animation-delay: 0s; }
+.drive-lamp.b { animation-delay: -0.63s; }
+.drive-lamp.c { animation-delay: -1.26s; }
+@keyframes drive-lamp {
+  from { left: 108%; }
+  to { left: -6%; }
+}
+.drive-road {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 46%;
+  background: linear-gradient(#2b2028, #171018);
+  border-top: 3px solid #6b5238aa;
+  overflow: hidden;
+}
+.drive-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 26%;
+  height: 5px;
+  background: repeating-linear-gradient(90deg, #8a6a4a 0 46px, transparent 46px 108px);
+  opacity: .55;
+  animation: drive-lines .75s linear infinite;
+}
+@keyframes drive-lines { to { background-position: -108px 0; } }
+.drive-truck {
+  position: absolute;
+  bottom: 30%;
+  left: -180px;
+  width: 168px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 8px 10px #00000066);
+}
+.drive.go .drive-truck { animation: drive-in 1.5s cubic-bezier(.25, .8, .3, 1) forwards; }
+.drive[data-dir="back"].go .drive-truck { animation: drive-in-back 1.5s cubic-bezier(.25, .8, .3, 1) forwards; }
+@keyframes drive-in {
+  0% { left: -180px; transform: translateY(0); }
+  30% { transform: translateY(-6px); }
+  55% { transform: translateY(2px); }
+  100% { left: 38%; transform: translateY(0); }
+}
+@keyframes drive-in-back {
+  0% { left: 118%; transform: translateY(0) scaleX(-1); }
+  40% { transform: translateY(-5px) scaleX(-1); }
+  100% { left: 38%; transform: translateY(0) scaleX(-1); }
+}
+.drive-text {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 22%;
+  z-index: 3;
+  margin: 0;
+  text-align: center;
+  color: #ffeadf;
+  font-size: 20px;
+  line-height: 1.7;
+  letter-spacing: .04em;
+  text-shadow: 0 4px 18px #000000aa;
+  opacity: 0;
+  animation: drive-text-in .8s ease-out .25s forwards;
+}
+@keyframes drive-text-in { to { opacity: 1; } }
+
+/* 镇上那个「开车回家」的牌子贴在皮卡边上 -------------------------------- */
+.scene[data-scene="town"] .spot-truck { background: #3b2a38ee; }
+
+/* 竖屏：镇上和菜园的出口按钮别压住方向键 --------------------------------- */
+@media (max-height: 520px) {
+  .drive-text { font-size: 16px; top: 14%; }
+  .drive-truck { width: 132px; }
 }

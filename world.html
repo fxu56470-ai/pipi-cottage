@@ -64,6 +64,40 @@
         <button class="spot" data-action="shop" style="left:118px;top:392px;width:150px;height:150px" aria-label="种子箱"><span class="spot-label">种子箱</span></button>
         <button class="exit" data-exit="cottage" style="left:250px;top:470px">← 回小屋</button>
         <button class="exit" data-exit="lake" style="left:1256px;top:620px">去湖边 →</button>
+        <button class="exit" data-exit="garden" style="left:660px;top:318px">屋后菜园 ↑</button>
+        <button class="exit" data-exit="pasture" style="left:1352px;top:742px">去牧场 →</button>
+        <button class="exit" data-action="driveTown" style="left:184px;top:772px">开车去镇上 →</button>
+      </section>
+
+      <!-- ---------------------------------------------------------- 屋后菜园 -->
+      <section class="scene" data-scene="garden">
+        <img class="scene-bg" src="assets/garden-art.webp" alt="屋后的菜园：中间是一大片翻好的土垄，右边一间玻璃温室，左边有稻草人和堆肥箱" draggable="false">
+        <svg class="field-lines" id="gardenLines" viewBox="0 0 1536 1024" aria-hidden="true"></svg>
+        <div class="plots" id="gardenPlots"></div>
+        <button class="spot" data-action="garden" style="left:662px;top:186px;width:224px;height:210px" aria-label="温室里的账本"><span class="spot-label">温室 · 菜园账本</span></button>
+        <button class="spot" data-action="look" data-text="稻草人的袖子被风吹得一直拍，鸟真的不来。它身上那件衣服是他旧衬衫改的。" style="left:412px;top:154px;width:82px;height:154px" aria-label="看看稻草人"><span class="spot-label">看看</span></button>
+        <button class="spot" data-action="look" data-text="堆肥箱里是去年的落叶和菜叶，翻一翻，底下是松软的黑土。" style="left:86px;top:224px;width:250px;height:158px" aria-label="看看堆肥箱"><span class="spot-label">看看</span></button>
+        <button class="exit" data-exit="farm" style="left:296px;top:856px">← 回农场</button>
+      </section>
+
+      <!-- ---------------------------------------------------------- 牧场 -->
+      <section class="scene" data-scene="pasture">
+        <img class="scene-bg" src="assets/pasture-art.webp" alt="傍晚的牧场：木栅栏围起一片草地，左边是谷仓和干草堆，中间有一个水槽" draggable="false">
+        <div class="pasture-animals" id="pastureAnimals" aria-hidden="true"></div>
+        <button class="spot" data-action="trough" style="left:628px;top:382px;width:124px;height:104px" aria-label="水槽"><span class="spot-label">喂一遍</span></button>
+        <button class="spot" data-action="pasture" style="left:906px;top:760px;width:176px;height:92px" aria-label="牧场里的动物"><span class="spot-label">牧场</span></button>
+        <button class="spot" data-action="look" data-text="干草堆被压出一个窝，大概是谁中午在这儿睡过。" style="left:58px;top:364px;width:168px;height:120px" aria-label="看看干草堆"><span class="spot-label">看看</span></button>
+        <button class="exit" data-exit="farm" style="left:266px;top:836px">← 回农场</button>
+      </section>
+
+      <!-- ---------------------------------------------------------- 镇上 -->
+      <section class="scene" data-scene="town">
+        <img class="scene-bg" src="assets/town-art.webp" alt="镇上的小广场：石板地、水井、红白条纹的市集棚子、面包房和露天咖啡座" draggable="false">
+        <button class="spot" data-action="market" style="left:560px;top:246px;width:424px;height:406px" aria-label="市集大棚"><span class="spot-label">市集大棚</span></button>
+        <button class="spot" data-action="bakery" style="left:120px;top:276px;width:290px;height:250px" aria-label="面包房"><span class="spot-label">面包房</span></button>
+        <button class="spot" data-action="cafe" style="left:256px;top:498px;width:190px;height:140px" aria-label="咖啡座"><span class="spot-label">坐下喝一杯</span></button>
+        <button class="spot" data-action="well" style="left:472px;top:372px;width:148px;height:330px" aria-label="水井"><span class="spot-label">水井</span></button>
+        <button class="exit spot-truck" data-action="driveHome" style="left:374px;top:800px">开车回家 →</button>
       </section>
 
       <!-- ---------------------------------------------------------- 湖边 -->
@@ -171,6 +205,8 @@
 <script src="js/ui.js"></script>
 <script src="js/world.js"></script>
 <script src="js/farm.js"></script>
+<script src="js/garden.js"></script>
+<script src="js/pasture.js"></script>
 <script src="js/fishing.js"></script>
 <script src="js/rest.js"></script>
 <script src="js/npc.js"></script>
@@ -178,6 +214,7 @@
 <script src="js/story.js"></script>
 <script src="js/dinner.js"></script>
 <script src="js/moments.js"></script>
+<script src="js/town.js"></script>
 <script src="js/boot.js"></script>
 <script src="js/pwa.js"></script>
 </body>

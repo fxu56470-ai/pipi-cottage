@@ -45,7 +45,47 @@
     return (S().plots || []).filter((plot) => plot.seed).length;
   }
 
+  function herdSize() {
+    return (S().animals || []).filter(Boolean).length;
+  }
+
+  function gardenPlanted() {
+    return (S().garden || []).filter((plot) => plot.seed).length;
+  }
+
+  function townTrips() {
+    return (S().flags && S().flags.townTrips) || 0;
+  }
+
   const LIST = [
+    {
+      id: 'firstHerd',
+      name: '围栏里有活物',
+      note: '从镇上牵回第一只动物',
+      test: () => herdSize() >= 1,
+      progress: () => [Math.min(herdSize(), 1), 1]
+    },
+    {
+      id: 'fullHerd',
+      name: '六个位置都满了',
+      note: '牧场养到六只',
+      test: () => herdSize() >= 6,
+      progress: () => [herdSize(), 6]
+    },
+    {
+      id: 'backyard',
+      name: '屋后那块地',
+      note: '在菜园里同时种下五格',
+      test: () => gardenPlanted() >= 5,
+      progress: () => [Math.min(gardenPlanted(), 5), 5]
+    },
+    {
+      id: 'townRun',
+      name: '常跑镇上',
+      note: '开车去镇上五次',
+      test: () => townTrips() >= 5,
+      progress: () => [Math.min(townTrips(), 5), 5]
+    },
     {
       id: 'firstDig',
       name: '第一把土',

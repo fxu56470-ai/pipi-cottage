@@ -360,7 +360,7 @@
           P.showHint('点菜地里空着的那格就能种下');
         });
         row.appendChild(b);
-      } else if (item.kind === 'crop' || item.kind === 'fish') {
+      } else if (item.kind === 'crop' || item.kind === 'fish' || item.kind === 'goods') {
         const sell = document.createElement('button');
         sell.type = 'button';
         sell.className = 'btn';
@@ -381,7 +381,8 @@
       const fishMeta = item.kind === 'fish' ? P.FISH[item.fish] : null;
       const giftable = fishMeta
         ? Boolean(fishMeta.gift || fishMeta.value >= 60)
-        : (id === 'wheat' || id === 'strawberry');
+        : (id === 'wheat' || id === 'strawberry' || item.kind === 'gift'
+          || id === 'egg' || id === 'milk' || id === 'bouquet');
       if (giftable) {
         const give = document.createElement('button');
         give.type = 'button';
@@ -410,7 +411,10 @@
     junk: { name: '杂物', dot: '#a99a90', n: 0 }
   };
   // 收满多少种给多少金币，一次只发一档
-  const DEX_TIERS = [{ n: 5, coins: 60 }, { n: 9, coins: 140 }, { n: 13, coins: 220 }, { n: 15, coins: 360 }];
+  const DEX_TIERS = [
+    { n: 5, coins: 60 }, { n: 9, coins: 140 }, { n: 13, coins: 220 },
+    { n: 15, coins: 360 }, { n: 17, coins: 520 }
+  ];
 
   function whereFish(f) {
     const bits = [];
@@ -546,7 +550,8 @@
     { key: 'kiss', name: '一个吻', art: 'assets/moment-kiss.webp', where: '夜里回小屋 · 点床', line: '他耳朵尖红起来，过了好一会儿才说：再来一下。' },
     { key: 'sleep', name: '一起睡', art: 'assets/moment-sleep.webp', where: '回小屋点床 · 选「和他一起睡」', line: '留了一半被子给他，他躺下的时候肩膀是松的。' },
     { key: 'fish', name: '一起钓鱼', art: 'assets/lake-art.webp', pos: '60% 56%', where: '湖边 · 点栈桥', line: '两根浮标并排立在水上，风一吹一起晃。' },
-    { key: 'towel', name: '递条毛巾', art: 'assets/bath-art.webp', pos: '46% 42%', where: '泡完澡 · 站到桶边点「递毛巾」', line: '把毛巾递过去，他擦得很慢，像在拖时间。' }
+    { key: 'towel', name: '递条毛巾', art: 'assets/bath-art.webp', pos: '46% 42%', where: '泡完澡 · 站到桶边点「递毛巾」', line: '把毛巾递过去，他擦得很慢，像在拖时间。' },
+    { key: 'cafe', name: '镇上的咖啡座', art: 'assets/town-art.webp', pos: '26% 60%', where: '镇上 · 他也在的时候点咖啡座', line: '井沿让出一块给你，杯子放在膝上，谁也没先开口。' }
   ];
 
   ui.memories = function memories() {
@@ -784,10 +789,12 @@
       title: '小屋', kicker: 'MENU', body: `
         <p>第 ${save.day} 天 · ${P.PHASES[save.phase]}　金币 ${save.coins}　好感 ${save.hearts} / 10</p>
         <div class="qlist">
-          <div class="qitem"><span class="mark">?</span><div><strong>怎么玩</strong><br>点地面走动（键盘 WASD / 方向键）。<br>点菜地：翻土 → 播种 → 浇水 → 等一天。<br>点水面：抛竿，浮标沉下去再点一下。<br>点湖边那张椅子：坐着发呆，能换回一点体力。<br>小屋右下角能去客厅，客厅往里是澡堂，澡堂上楼是楼顶。<br>点床睡觉，进入第二天，作物才会长。</div></div>
+          <div class="qitem"><span class="mark">?</span><div><strong>怎么玩</strong><br>点地面走动（键盘 WASD / 方向键）。<br>点菜地：翻土 → 播种 → 浇水 → 等一天。<br>农场上面是屋后菜园（二十格，土是现成的），右边是牧场（养鸡羊牛）。<br>农场左下角能开车去镇上：镇上有玉米南瓜种子、饲料、肥料和牲口。<br>点水面：抛竿，浮标沉下去再点一下。<br>小屋右下角能去客厅，客厅往里是澡堂，澡堂上楼是楼顶。<br>点床睡觉，进入第二天，作物和动物才会长。</div></div>
           <div class="qitem"><span class="mark">♪</span><div><strong>声音</strong><br>右上角的 ♪ 可以开关音乐和音效。</div></div>
           <div class="qitem" id="menuRecord" role="button" tabindex="0"><span class="mark">★</span><div><strong>这些日子</strong><br>看看已经做成了哪些事。</div></div>
           <div class="qitem" id="menuMemories" role="button" tabindex="0"><span class="mark">♡</span><div><strong>照片墙</strong><br>两个人待在一起的那些时候，一格一格挂着。</div></div>
+          <div class="qitem" id="menuGarden" role="button" tabindex="0"><span class="mark">≋</span><div><strong>屋后菜园</strong><br>二十格地，能一档一档地开。</div></div>
+          <div class="qitem" id="menuPasture" role="button" tabindex="0"><span class="mark">☘</span><div><strong>牧场</strong><br>喂过的动物，第二天才给东西。</div></div>
         </div>`,
       foot: [
         { label: P.audio.on ? '关掉音乐' : '打开音乐', pale: true, run: () => { P.audio.toggle(); ui.hud(); ui.closeSheet(); } },
@@ -805,6 +812,17 @@
             if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); }
           });
         }
+        const jumpTo = (id, scene) => {
+          const row = wrap.querySelector(id);
+          if (!row) return;
+          const go = () => { ui.closeSheet(); setTimeout(() => P.world.go(scene), 120); };
+          row.addEventListener('click', go);
+          row.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); go(); }
+          });
+        };
+        jumpTo('#menuGarden', 'garden');
+        jumpTo('#menuPasture', 'pasture');
         const memo = wrap.querySelector('#menuMemories');
         if (memo) {
           const openWall = () => { ui.closeSheet(); setTimeout(() => ui.memories(), 120); };
